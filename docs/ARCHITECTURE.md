@@ -79,7 +79,7 @@ Every mission run records `inputKind` so support and QA can detect device-specif
 The current build uses lightweight Web Audio effects and browser speech synthesis:
 
 - Web Audio handles launch, lock, laser, hit, and warning effects.
-- Speech synthesis reads mission briefings after a user taps the speaker button.
+- Speech synthesis reads mission briefings after a user taps the speaker button and prefers installed natural English voices when the operating system exposes them.
 - Future produced audio files can replace these helpers without changing game progression logic.
 
 ## Game Progression

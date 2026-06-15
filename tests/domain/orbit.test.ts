@@ -11,9 +11,24 @@ describe('orbit math', () => {
     expect(high.durationSeconds).toBeLessThanOrEqual(120);
   });
 
+  it('adds more advanced paths as levels increase', () => {
+    expect(orbitConfigForLevel(1).path).toBe('circle');
+    expect(orbitConfigForLevel(3).path).toBe('figure-eight');
+    expect(orbitConfigForLevel(5).path).toBe('swoop');
+    expect(orbitConfigForLevel(9).path).toBe('lissajous');
+  });
+
   it('generates target positions inside padded canvas bounds', () => {
     const bounds = { width: 1000, height: 700, padding: 100 };
-    const paths = ['circle', 'horizontal', 'vertical', 'figure-eight', 'rectangle'] as const;
+    const paths = [
+      'circle',
+      'vertical',
+      'figure-eight',
+      'rectangle',
+      'swoop',
+      'spiral',
+      'lissajous',
+    ] as const;
 
     for (const path of paths) {
       for (let i = 0; i < 20; i += 1) {

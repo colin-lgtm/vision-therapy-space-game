@@ -26,6 +26,7 @@ const canvasContext = {
   lineTo: vi.fn(),
   moveTo: vi.fn(),
   restore: vi.fn(),
+  roundRect: vi.fn(),
   save: vi.fn(),
   setTransform: vi.fn(),
   stroke: vi.fn(),

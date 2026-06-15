@@ -17,6 +17,8 @@ interface OrbitStats {
   totalDistance: number;
   misses: number;
   meteorsDestroyed: number;
+  aliensDestroyed: number;
+  shotsFired: number;
   shieldHits: number;
 }
 
@@ -26,17 +28,23 @@ const emptyStats: OrbitStats = {
   totalDistance: 0,
   misses: 0,
   meteorsDestroyed: 0,
+  aliensDestroyed: 0,
+  shotsFired: 0,
   shieldHits: 0,
 };
 
-interface Meteor {
+type ThreatKind = 'meteor' | 'alien';
+
+interface Threat {
   id: number;
+  kind: ThreatKind;
   x: number;
   y: number;
   vx: number;
   vy: number;
   radius: number;
   spin: number;
+  nextFireAt: number;
 }
 
 interface Blast {
@@ -50,6 +58,15 @@ interface Blast {
 interface Shot {
   from: Point;
   to: Point;
+  life: number;
+  color: string;
+}
+
+interface EnemyBolt {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
   life: number;
 }
 
@@ -78,14 +95,19 @@ export function OrbitTracker({ onComplete, onExit }: OrbitTrackerProps) {
   const pauseStartedRef = useRef<number | null>(null);
   const pausedMsRef = useRef(0);
   const activeSecondsRef = useRef(0);
-  const meteorsRef = useRef<Meteor[]>([]);
+  const threatsRef = useRef<Threat[]>([]);
+  const boltsRef = useRef<EnemyBolt[]>([]);
   const blastsRef = useRef<Blast[]>([]);
   const shotsRef = useRef<Shot[]>([]);
   const lastMeteorSpawnRef = useRef(0);
   const lastShotRef = useRef(0);
+  const pendingShotRef = useRef(false);
   const shieldEnergyRef = useRef(45);
-  const meteorIdRef = useRef(0);
+  const hullHealthRef = useRef(100);
+  const threatIdRef = useRef(0);
   const wasLockedRef = useRef(false);
+  const currentTargetRef = useRef<Point | null>(null);
+  const currentLockedRef = useRef(false);
 
   const level = useAcademyStore((state) => state.progress['orbit-tracker'].level);
   const config = useMemo(() => orbitConfigForLevel(level), [level]);
@@ -93,6 +115,9 @@ export function OrbitTracker({ onComplete, onExit }: OrbitTrackerProps) {
   const [remainingSeconds, setRemainingSeconds] = useState(config.durationSeconds);
   const [lockPercent, setLockPercent] = useState(0);
   const [shieldEnergy, setShieldEnergy] = useState(45);
+  const [hullHealth, setHullHealth] = useState(100);
+  const [gameOver, setGameOver] = useState(false);
+  const [restartNonce, setRestartNonce] = useState(0);
 
   const finish = useCallback(
     (status: MissionResult['status']) => {
@@ -122,7 +147,10 @@ export function OrbitTracker({ onComplete, onExit }: OrbitTrackerProps) {
           averageDistance: Math.round(averageDistance),
           misses: stats.misses,
           meteorsDestroyed: stats.meteorsDestroyed,
+          aliensDestroyed: stats.aliensDestroyed,
+          shotsFired: stats.shotsFired,
           shieldHits: stats.shieldHits,
+          hullHealth: Math.round(hullHealthRef.current),
           path: config.path,
           targetRadius: config.targetRadius,
           speed: config.speed,
@@ -131,6 +159,93 @@ export function OrbitTracker({ onComplete, onExit }: OrbitTrackerProps) {
     },
     [config, level, onComplete],
   );
+
+  const resetRun = useCallback(() => {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    pointerRef.current = null;
+    inputKindRef.current = 'unknown';
+    statsRef.current = { ...emptyStats };
+    completedRef.current = false;
+    startRef.current = null;
+    pauseStartedRef.current = null;
+    pausedMsRef.current = 0;
+    activeSecondsRef.current = 0;
+    threatsRef.current = [];
+    boltsRef.current = [];
+    blastsRef.current = [];
+    shotsRef.current = [];
+    lastMeteorSpawnRef.current = 0;
+    lastShotRef.current = 0;
+    pendingShotRef.current = false;
+    shieldEnergyRef.current = 45;
+    hullHealthRef.current = 100;
+    wasLockedRef.current = false;
+    currentTargetRef.current = null;
+    currentLockedRef.current = false;
+    setShieldEnergy(45);
+    setHullHealth(100);
+    setLockPercent(0);
+    setRemainingSeconds(config.durationSeconds);
+    setGameOver(false);
+    setIsPaused(false);
+    setRestartNonce((value) => value + 1);
+  }, [config.durationSeconds]);
+
+  const fireManualShot = useCallback(() => {
+    const target = currentTargetRef.current;
+    const pointer = pointerRef.current;
+    if (!target || !pointer || !currentLockedRef.current || gameOver || isPaused) {
+      playEffect('warning');
+      return;
+    }
+
+    if (shieldEnergyRef.current < 8 || performance.now() - lastShotRef.current < 180) {
+      playEffect('warning');
+      return;
+    }
+
+    statsRef.current.shotsFired += 1;
+    const targetThreat = threatsRef.current
+      .map((threat) => ({ threat, range: distance(threat, target) }))
+      .sort((a, b) => a.range - b.range)[0]?.threat;
+
+    if (!targetThreat) {
+      playEffect('laser');
+      shotsRef.current.push({
+        from: { ...target },
+        to: {
+          x: target.x + Math.cos(performance.now() / 250) * 180,
+          y: target.y + Math.sin(performance.now() / 250) * 120,
+        },
+        life: 1,
+        color: '#6cf0ff',
+      });
+      lastShotRef.current = performance.now();
+      return;
+    }
+
+    threatsRef.current = threatsRef.current.filter((threat) => threat.id !== targetThreat.id);
+    if (targetThreat.kind === 'alien') statsRef.current.aliensDestroyed += 1;
+    else statsRef.current.meteorsDestroyed += 1;
+    shieldEnergyRef.current = Math.max(0, shieldEnergyRef.current - 4);
+    setShieldEnergy(shieldEnergyRef.current);
+    shotsRef.current.push({
+      from: { ...target },
+      to: { x: targetThreat.x, y: targetThreat.y },
+      life: 1,
+      color: targetThreat.kind === 'alien' ? '#ff6b9d' : '#ffd166',
+    });
+    blastsRef.current.push({
+      x: targetThreat.x,
+      y: targetThreat.y,
+      radius: targetThreat.kind === 'alien' ? 78 : 62,
+      life: 1,
+      color: targetThreat.kind === 'alien' ? '#ff6b9d' : '#ffd166',
+    });
+    playEffect('laser');
+    window.setTimeout(() => playEffect('hit'), 70);
+    lastShotRef.current = performance.now();
+  }, [gameOver, isPaused]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -161,40 +276,88 @@ export function OrbitTracker({ onComplete, onExit }: OrbitTrackerProps) {
       context.restore();
     };
 
-    const spawnMeteor = (width: number, height: number, target: Point) => {
-      const fromTop = Math.random() > 0.5;
-      const x = fromTop ? Math.random() * width : width + 34;
-      const y = fromTop ? -34 : Math.random() * height;
-      const angle = Math.atan2(target.y - y, target.x - x);
-      const speed = 0.75 + Math.random() * 0.55 + level * 0.018;
-      meteorsRef.current.push({
-        id: meteorIdRef.current,
+    const damageHull = (amount: number, x: number, y: number, color = '#ff6b9d') => {
+      statsRef.current.shieldHits += 1;
+      shieldEnergyRef.current = Math.max(0, shieldEnergyRef.current - amount * 0.45);
+      hullHealthRef.current = Math.max(0, hullHealthRef.current - amount);
+      setShieldEnergy(shieldEnergyRef.current);
+      setHullHealth(hullHealthRef.current);
+      blastsRef.current.push({
         x,
         y,
-        vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed,
-        radius: 13 + Math.random() * 11,
-        spin: Math.random() * Math.PI,
+        radius: 52,
+        life: 1,
+        color,
       });
-      meteorIdRef.current += 1;
+      playEffect('warning');
+      if (hullHealthRef.current <= 0) {
+        setGameOver(true);
+        playEffect('hit');
+      }
     };
 
-    const drawMeteor = (meteor: Meteor) => {
+    const spawnThreat = (width: number, height: number, target: Point, now: number) => {
+      const kind: ThreatKind =
+        Math.random() < Math.min(0.36, 0.08 + level * 0.018) ? 'alien' : 'meteor';
+      const fromTop = Math.random() > 0.5;
+      const x = kind === 'alien' ? width + 54 : fromTop ? Math.random() * width : width + 34;
+      const y =
+        kind === 'alien'
+          ? Math.max(80, Math.random() * (height - 160))
+          : fromTop
+            ? -34
+            : Math.random() * height;
+      const angle = Math.atan2(target.y - y, target.x - x);
+      const speed =
+        kind === 'alien' ? 0.42 + level * 0.01 : 0.75 + Math.random() * 0.55 + level * 0.018;
+      threatsRef.current.push({
+        id: threatIdRef.current,
+        kind,
+        x,
+        y,
+        vx: kind === 'alien' ? -speed : Math.cos(angle) * speed,
+        vy: kind === 'alien' ? Math.sin(now / 900) * 0.35 : Math.sin(angle) * speed,
+        radius: kind === 'alien' ? 22 : 13 + Math.random() * 11,
+        spin: Math.random() * Math.PI,
+        nextFireAt: now + 900 + Math.random() * 1100,
+      });
+      threatIdRef.current += 1;
+    };
+
+    const drawThreat = (threat: Threat) => {
       context.save();
-      context.translate(meteor.x, meteor.y);
-      context.rotate(meteor.spin);
-      context.fillStyle = '#a15d36';
-      context.strokeStyle = '#ffd166';
-      context.lineWidth = 2;
-      context.beginPath();
-      context.moveTo(-meteor.radius, -meteor.radius * 0.2);
-      context.lineTo(-meteor.radius * 0.2, -meteor.radius);
-      context.lineTo(meteor.radius, -meteor.radius * 0.4);
-      context.lineTo(meteor.radius * 0.75, meteor.radius * 0.7);
-      context.lineTo(-meteor.radius * 0.45, meteor.radius);
-      context.closePath();
-      context.fill();
-      context.stroke();
+      context.translate(threat.x, threat.y);
+      context.rotate(threat.spin);
+      if (threat.kind === 'alien') {
+        context.fillStyle = '#6cf0ff';
+        context.strokeStyle = '#ff6b9d';
+        context.lineWidth = 3;
+        context.beginPath();
+        context.moveTo(-threat.radius * 1.35, 0);
+        context.lineTo(-threat.radius * 0.18, -threat.radius * 0.9);
+        context.lineTo(threat.radius * 1.45, 0);
+        context.lineTo(-threat.radius * 0.18, threat.radius * 0.9);
+        context.closePath();
+        context.fill();
+        context.stroke();
+        context.fillStyle = '#07111f';
+        context.beginPath();
+        context.arc(threat.radius * 0.25, 0, threat.radius * 0.25, 0, Math.PI * 2);
+        context.fill();
+      } else {
+        context.fillStyle = '#a15d36';
+        context.strokeStyle = '#ffd166';
+        context.lineWidth = 2;
+        context.beginPath();
+        context.moveTo(-threat.radius, -threat.radius * 0.2);
+        context.lineTo(-threat.radius * 0.2, -threat.radius);
+        context.lineTo(threat.radius, -threat.radius * 0.4);
+        context.lineTo(threat.radius * 0.75, threat.radius * 0.7);
+        context.lineTo(-threat.radius * 0.45, threat.radius);
+        context.closePath();
+        context.fill();
+        context.stroke();
+      }
       context.restore();
     };
 
@@ -218,13 +381,26 @@ export function OrbitTracker({ onComplete, onExit }: OrbitTrackerProps) {
       context.moveTo(shot.from.x, shot.from.y);
       context.lineTo(shot.to.x, shot.to.y);
       context.stroke();
-      context.strokeStyle = '#6cf0ff';
+      context.strokeStyle = shot.color;
       context.lineWidth = 3;
       context.stroke();
       context.restore();
     };
 
+    const drawBolt = (bolt: EnemyBolt) => {
+      context.save();
+      context.globalAlpha = Math.max(0, bolt.life);
+      context.fillStyle = '#ff6b9d';
+      context.shadowColor = '#ff6b9d';
+      context.shadowBlur = 16;
+      context.beginPath();
+      context.arc(bolt.x, bolt.y, 6, 0, Math.PI * 2);
+      context.fill();
+      context.restore();
+    };
+
     const draw = (now: number) => {
+      if (gameOver) return;
       if (startRef.current === null) startRef.current = now;
 
       if (isPaused) {
@@ -261,6 +437,8 @@ export function OrbitTracker({ onComplete, onExit }: OrbitTrackerProps) {
       const pointer = pointerRef.current;
       const pointerDistance = pointer ? distance(pointer, target) : config.targetRadius + 200;
       const isLocked = pointerDistance <= config.targetRadius;
+      currentTargetRef.current = target;
+      currentLockedRef.current = isLocked;
       const stats = statsRef.current;
       stats.samples += 1;
       stats.totalDistance += pointerDistance;
@@ -272,6 +450,12 @@ export function OrbitTracker({ onComplete, onExit }: OrbitTrackerProps) {
         playEffect('lock');
       }
       wasLockedRef.current = isLocked;
+
+      if (pendingShotRef.current) {
+        pendingShotRef.current = false;
+        fireManualShot();
+      }
+
       shieldEnergyRef.current = Math.max(
         0,
         Math.min(100, shieldEnergyRef.current + (isLocked ? 0.48 : -0.2)),
@@ -280,60 +464,64 @@ export function OrbitTracker({ onComplete, onExit }: OrbitTrackerProps) {
 
       const spawnInterval = Math.max(760, 1650 - level * 36);
       if (now - lastMeteorSpawnRef.current > spawnInterval) {
-        spawnMeteor(width, height, target);
+        spawnThreat(width, height, target, now);
         lastMeteorSpawnRef.current = now;
       }
 
-      meteorsRef.current = meteorsRef.current
-        .map((meteor) => ({
-          ...meteor,
-          x: meteor.x + meteor.vx,
-          y: meteor.y + meteor.vy,
-          spin: meteor.spin + 0.035,
-        }))
-        .filter((meteor) => {
-          if (distance(meteor, target) < meteor.radius + config.targetRadius * 0.72) {
-            stats.shieldHits += 1;
-            shieldEnergyRef.current = Math.max(0, shieldEnergyRef.current - 10);
-            blastsRef.current.push({
-              x: meteor.x,
-              y: meteor.y,
-              radius: 48,
+      threatsRef.current = threatsRef.current
+        .map((threat) => {
+          const nextThreat = {
+            ...threat,
+            x: threat.x + threat.vx,
+            y:
+              threat.y +
+              threat.vy +
+              (threat.kind === 'alien' ? Math.sin(now / 350 + threat.id) * 0.38 : 0),
+            spin: threat.spin + (threat.kind === 'alien' ? 0.01 : 0.035),
+          };
+          if (nextThreat.kind === 'alien' && now > nextThreat.nextFireAt) {
+            const angle = Math.atan2(target.y - nextThreat.y, target.x - nextThreat.x);
+            boltsRef.current.push({
+              x: nextThreat.x,
+              y: nextThreat.y,
+              vx: Math.cos(angle) * 4.2,
+              vy: Math.sin(angle) * 4.2,
               life: 1,
-              color: '#ff6b9d',
             });
-            playEffect('warning');
+            nextThreat.nextFireAt = now + Math.max(780, 1800 - level * 35);
+          }
+          return nextThreat;
+        })
+        .filter((threat) => {
+          if (distance(threat, target) < threat.radius + config.targetRadius * 0.72) {
+            damageHull(threat.kind === 'alien' ? 18 : 12, threat.x, threat.y);
             return false;
           }
           return (
-            meteor.x > -80 && meteor.x < width + 90 && meteor.y > -90 && meteor.y < height + 90
+            threat.x > -90 && threat.x < width + 100 && threat.y > -100 && threat.y < height + 100
           );
         });
 
-      if (isLocked && shieldEnergyRef.current > 20 && now - lastShotRef.current > 520) {
-        const targetMeteor = meteorsRef.current
-          .map((meteor) => ({ meteor, range: distance(meteor, target) }))
-          .sort((a, b) => a.range - b.range)[0]?.meteor;
-        if (targetMeteor) {
-          meteorsRef.current = meteorsRef.current.filter((meteor) => meteor.id !== targetMeteor.id);
-          stats.meteorsDestroyed += 1;
-          shotsRef.current.push({
-            from: { ...target },
-            to: { x: targetMeteor.x, y: targetMeteor.y },
-            life: 1,
-          });
-          blastsRef.current.push({
-            x: targetMeteor.x,
-            y: targetMeteor.y,
-            radius: 62,
-            life: 1,
-            color: '#ffd166',
-          });
-          playEffect('laser');
-          window.setTimeout(() => playEffect('hit'), 70);
-          lastShotRef.current = now;
-        }
-      }
+      boltsRef.current = boltsRef.current
+        .map((bolt) => ({
+          ...bolt,
+          x: bolt.x + bolt.vx,
+          y: bolt.y + bolt.vy,
+          life: bolt.life - 0.003,
+        }))
+        .filter((bolt) => {
+          if (distance(bolt, target) < config.targetRadius + 10) {
+            damageHull(8, bolt.x, bolt.y, '#ff6b9d');
+            return false;
+          }
+          return (
+            bolt.life > 0 &&
+            bolt.x > -30 &&
+            bolt.x < width + 30 &&
+            bolt.y > -30 &&
+            bolt.y < height + 30
+          );
+        });
 
       shotsRef.current = shotsRef.current
         .map((shot) => ({ ...shot, life: shot.life - 0.08 }))
@@ -369,7 +557,8 @@ export function OrbitTracker({ onComplete, onExit }: OrbitTrackerProps) {
         context.restore();
       }
 
-      meteorsRef.current.forEach(drawMeteor);
+      threatsRef.current.forEach(drawThreat);
+      boltsRef.current.forEach(drawBolt);
       shotsRef.current.forEach(drawShot);
       blastsRef.current.forEach(drawBlast);
 
@@ -413,6 +602,23 @@ export function OrbitTracker({ onComplete, onExit }: OrbitTrackerProps) {
       context.textBaseline = 'middle';
       context.fillText('LOCK', target.x, target.y);
 
+      context.save();
+      context.fillStyle = 'rgba(7, 17, 31, 0.72)';
+      context.strokeStyle = 'rgba(255, 255, 255, 0.18)';
+      context.lineWidth = 2;
+      context.roundRect(18, 18, 220, 64, 8);
+      context.fill();
+      context.stroke();
+      context.fillStyle = '#ffffff';
+      context.font = '900 14px Verdana';
+      context.textAlign = 'left';
+      context.fillText('CLICK WHILE LOCKED TO FIRE', 34, 42);
+      context.fillStyle = '#ff6b9d';
+      context.fillRect(34, 54, 172, 10);
+      context.fillStyle = '#7dff9b';
+      context.fillRect(34, 54, 172 * (hullHealthRef.current / 100), 10);
+      context.restore();
+
       if (remaining <= 0) {
         finish('completed');
         return;
@@ -429,11 +635,12 @@ export function OrbitTracker({ onComplete, onExit }: OrbitTrackerProps) {
       window.removeEventListener('resize', resize);
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [config, finish, isPaused, level]);
+  }, [config, finish, fireManualShot, gameOver, isPaused, level, restartNonce]);
 
   const roundedLock = Math.round(lockPercent * 100);
   const roundedTime = Math.ceil(remainingSeconds);
   const roundedShield = Math.round(shieldEnergy);
+  const roundedHull = Math.round(hullHealth);
 
   return (
     <div className="flex h-full flex-col p-5">
@@ -454,6 +661,10 @@ export function OrbitTracker({ onComplete, onExit }: OrbitTrackerProps) {
           <div className="rounded-lg border border-white/10 bg-white/7 px-4 py-2 text-center">
             <div className="text-2xl font-black text-comet">{roundedShield}%</div>
             <div className="text-xs font-bold uppercase text-white/65">Shield</div>
+          </div>
+          <div className="rounded-lg border border-white/10 bg-white/7 px-4 py-2 text-center">
+            <div className="text-2xl font-black text-success">{roundedHull}%</div>
+            <div className="text-xs font-bold uppercase text-white/65">Hull</div>
           </div>
           <div className="rounded-lg border border-white/10 bg-white/7 px-4 py-2 text-center">
             <div className="text-2xl font-black text-plasma">{roundedTime}s</div>
@@ -497,6 +708,7 @@ export function OrbitTracker({ onComplete, onExit }: OrbitTrackerProps) {
             event.currentTarget.setPointerCapture(event.pointerId);
             pointerRef.current = canvasPoint(event);
             inputKindRef.current = inputKindFromPointer(event.pointerType);
+            pendingShotRef.current = true;
           }}
           onPointerLeave={() => {
             pointerRef.current = null;
@@ -518,6 +730,36 @@ export function OrbitTracker({ onComplete, onExit }: OrbitTrackerProps) {
               <Shield className="mx-auto mb-4 h-12 w-12 text-plasma" />
               <h2 className="text-3xl font-black">Mission paused</h2>
               <p className="mt-2 text-white/70">The comet is holding position.</p>
+            </div>
+          </div>
+        )}
+
+        {gameOver && (
+          <div className="absolute inset-0 flex items-center justify-center bg-space-950/78 backdrop-blur-sm">
+            <div className="glass-panel max-w-lg rounded-lg px-8 py-7 text-center">
+              <Shield className="mx-auto mb-4 h-14 w-14 text-nebula" />
+              <p className="text-sm font-black uppercase text-nebula">Orbit Destroyed</p>
+              <h2 className="mt-2 text-4xl font-black">Try the mission again</h2>
+              <p className="mt-3 leading-6 text-white/70">
+                Keep the beam locked, then tap or click to fire before the meteors and alien ships
+                break the shield.
+              </p>
+              <div className="mt-6 flex justify-center gap-3">
+                <button
+                  className="min-h-12 rounded-md bg-plasma px-6 py-3 font-black text-space-950 shadow-glow"
+                  onClick={resetRun}
+                  type="button"
+                >
+                  Restart Mission
+                </button>
+                <button
+                  className="min-h-12 rounded-md border border-white/15 bg-white/8 px-6 py-3 font-black text-white"
+                  onClick={onExit}
+                  type="button"
+                >
+                  Back to Map
+                </button>
+              </div>
             </div>
           </div>
         )}

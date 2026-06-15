@@ -20,10 +20,10 @@ export const worlds: WorldDefinition[] = [
     name: 'Orbit Tracker',
     shortName: 'Orbit',
     diagnosisTarget: 'Smooth pursuits and visually directed fine motor control',
-    gameGoal: 'Lock on, power the shield, and blast incoming meteors.',
-    playerAction: 'Drag the beam and keep it inside the glowing comet.',
+    gameGoal: 'Lock on, defend the orbit, and blast meteors and alien ships.',
+    playerAction: 'Track the comet, then tap or click while locked to fire.',
     briefing:
-      'Orbit Tracker. Keep your finger, pen, or mouse locked on the comet. When the lock is strong, the shield fires at meteors.',
+      'Orbit Tracker. Keep your finger, pen, or mouse locked on the comet. When the lock is strong, tap or click to fire at meteors and alien ships before they break the orbit.',
     color: '#6cf0ff',
     unlockStars: 0,
     enabledInMvp: true,

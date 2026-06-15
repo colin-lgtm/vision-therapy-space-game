@@ -74,11 +74,47 @@ export function speakBriefing(text: string) {
 
   window.speechSynthesis.cancel();
   const utterance = new SpeechSynthesisUtterance(text);
-  utterance.rate = 0.94;
-  utterance.pitch = 1.12;
+  utterance.voice = chooseBriefingVoice();
+  utterance.rate = 0.9;
+  utterance.pitch = 1.0;
   utterance.volume = 0.95;
   window.speechSynthesis.speak(utterance);
   playEffect('briefing');
+}
+
+function chooseBriefingVoice(): SpeechSynthesisVoice | null {
+  const voices = window.speechSynthesis.getVoices();
+  if (voices.length === 0) return null;
+
+  const englishVoices = voices.filter((voice) => voice.lang.toLowerCase().startsWith('en'));
+  const preferredNames = [
+    'natural',
+    'jenny',
+    'aria',
+    'guy',
+    'ava',
+    'andrew',
+    'emma',
+    'brian',
+    'microsoft',
+    'google us english',
+  ];
+
+  return (
+    preferredNames
+      .map((name) =>
+        englishVoices.find(
+          (voice) => voice.name.toLowerCase().includes(name) && voice.localService,
+        ),
+      )
+      .find(Boolean) ??
+    preferredNames
+      .map((name) => englishVoices.find((voice) => voice.name.toLowerCase().includes(name)))
+      .find(Boolean) ??
+    englishVoices.find((voice) => voice.localService) ??
+    englishVoices[0] ??
+    null
+  );
 }
 
 declare global {
