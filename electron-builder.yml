@@ -1,0 +1,17 @@
+appId: com.nateovision.spaceacademy
+productName: Nate-O-Vision Space Academy
+directories:
+  output: release
+files:
+  - electron/**
+  - dist/**
+  - dist-electron/**
+  - package.json
+win:
+  target:
+    - nsis
+  artifactName: Nate-O-Vision-Space-Academy-${version}.${ext}
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
