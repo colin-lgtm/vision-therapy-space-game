@@ -6,8 +6,12 @@ export interface WorldDefinition {
   shortName: string;
   diagnosisTarget: string;
   gameGoal: string;
+  playerAction: string;
+  briefing: string;
   color: string;
+  unlockStars: number;
   enabledInMvp: boolean;
+  visualKind: 'comet' | 'gate' | 'portal' | 'decoder';
 }
 
 export const worlds: WorldDefinition[] = [
@@ -16,9 +20,14 @@ export const worlds: WorldDefinition[] = [
     name: 'Orbit Tracker',
     shortName: 'Orbit',
     diagnosisTarget: 'Smooth pursuits and visually directed fine motor control',
-    gameGoal: 'Keep the tractor beam locked onto the comet.',
+    gameGoal: 'Lock on, power the shield, and blast incoming meteors.',
+    playerAction: 'Drag the beam and keep it inside the glowing comet.',
+    briefing:
+      'Orbit Tracker. Keep your finger, pen, or mouse locked on the comet. When the lock is strong, the shield fires at meteors.',
     color: '#6cf0ff',
+    unlockStars: 0,
     enabledInMvp: true,
+    visualKind: 'comet',
   },
   {
     id: 'star-jumper',
@@ -26,8 +35,13 @@ export const worlds: WorldDefinition[] = [
     shortName: 'Jumper',
     diagnosisTarget: 'Saccades, localization, and visual-motor response',
     gameGoal: 'Tap jump gates before they disappear.',
+    playerAction: 'Quickly tap the right gate, then jump to the next one.',
+    briefing:
+      'Star Jumper. Watch for jump gates around the screen. Tap the right one fast and ignore space decoys.',
     color: '#ffd166',
+    unlockStars: 6,
     enabledInMvp: false,
+    visualKind: 'gate',
   },
   {
     id: 'focus-portal',
@@ -35,8 +49,13 @@ export const worlds: WorldDefinition[] = [
     shortName: 'Portal',
     diagnosisTarget: 'Near-far accommodative flexibility',
     gameGoal: 'Decode glyphs near and far to stabilize the portal.',
+    playerAction: 'Read a near code, look to the wall target, then match the symbol.',
+    briefing:
+      'Focus Portal. Decode a close-up space symbol, then look far away to recharge the portal before matching the code.',
     color: '#7dff9b',
+    unlockStars: 12,
     enabledInMvp: false,
+    visualKind: 'portal',
   },
   {
     id: 'dual-signal',
@@ -44,7 +63,12 @@ export const worlds: WorldDefinition[] = [
     shortName: 'Decoder',
     diagnosisTarget: 'Binocular awareness and eye teaming',
     gameGoal: 'Read both alien signals and unlock the shield.',
+    playerAction: 'Use the color glasses setup and report both signals.',
+    briefing:
+      'Dual Signal Decoder. Two alien signals appear at once. Decode both signals to calibrate the academy shield.',
     color: '#ff6b9d',
+    unlockStars: 18,
     enabledInMvp: false,
+    visualKind: 'decoder',
   },
 ];

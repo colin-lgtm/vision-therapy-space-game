@@ -27,4 +27,12 @@ describe('App', () => {
     expect(await screen.findByText('Keep the beam locked')).toBeInTheDocument();
     expect(screen.getByLabelText('Orbit Tracker game surface')).toBeInTheDocument();
   });
+
+  it('shows audio briefing and test unlock affordances on the star map', async () => {
+    render(<App />);
+
+    expect(await screen.findByText('Audio Briefings')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Unlock Cards' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Hear Orbit Tracker briefing' })).toBeInTheDocument();
+  });
 });

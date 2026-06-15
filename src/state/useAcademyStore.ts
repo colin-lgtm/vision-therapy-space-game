@@ -22,6 +22,7 @@ interface AcademyStore extends AcademyState {
   saveNow: () => Promise<void>;
   recordMissionResult: (result: MissionResult) => Promise<void>;
   logEvent: (event: Omit<AcademyEvent, 'id' | 'at'>) => Promise<void>;
+  unlockAllForTesting: () => Promise<void>;
 }
 
 function todayIso(): string {
@@ -141,6 +142,29 @@ export const useAcademyStore = create<AcademyStore>((set, get) => ({
     };
     set(nextState);
     await savePersistedState(toPersistableState(nextState));
+  },
+  unlockAllForTesting: async () => {
+    const nextState: AcademyState = {
+      ...toPersistableState(get()),
+      profile: {
+        ...get().profile,
+        totalStars: Math.max(get().profile.totalStars, 30),
+        rank: rankForStars(Math.max(get().profile.totalStars, 30)),
+        unlockedWorlds: ['orbit-tracker', 'star-jumper', 'focus-portal', 'dual-signal'],
+        unlockedCosmetics: unlockCosmetics(Math.max(get().profile.totalStars, 30)),
+      },
+      events: [
+        {
+          id: nanoid(),
+          at: todayIso(),
+          type: 'testing.unlockAll',
+          payload: { totalStars: 30 },
+        },
+        ...get().events,
+      ].slice(0, 5000),
+    };
+    set(nextState);
+    await savePersistedState(nextState);
   },
 }));
 

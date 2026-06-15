@@ -8,10 +8,12 @@ The app is designed as a private family tool. It is not a diagnostic product, a 
 
 - Electron + React + TypeScript + Vite app shell
 - Surface-friendly star map game UI
+- Animated mission-card artwork with audio briefings for each game
 - Local persistence through Electron storage with browser fallback for development
-- Orbit Tracker world with touch/pen/mouse beam-lock gameplay
+- Orbit Tracker world with touch/pen/mouse beam-lock gameplay, shield energy, meteors, and lock-on effects
 - Level progression, stars, rank, cosmetics, unlocks, and mission summaries
 - Grown-up dashboard with progress metrics and JSON export
+- Test Lab unlock control for inspecting mission cards without grinding progression
 - Unit, component, and Playwright end-to-end test coverage
 - Windows installer configuration through Electron Builder
 

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Home, Pause, Play, Shield, X } from 'lucide-react';
+import { playEffect } from '@/domain/audio';
 import { calculateOrbitScore } from '@/domain/progression';
 import { distance, orbitConfigForLevel, targetPosition, type Point } from '@/domain/orbit';
 import { useAcademyStore } from '@/state/useAcademyStore';
@@ -15,6 +16,8 @@ interface OrbitStats {
   lockedSamples: number;
   totalDistance: number;
   misses: number;
+  meteorsDestroyed: number;
+  shieldHits: number;
 }
 
 const emptyStats: OrbitStats = {
@@ -22,7 +25,33 @@ const emptyStats: OrbitStats = {
   lockedSamples: 0,
   totalDistance: 0,
   misses: 0,
+  meteorsDestroyed: 0,
+  shieldHits: 0,
 };
+
+interface Meteor {
+  id: number;
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  radius: number;
+  spin: number;
+}
+
+interface Blast {
+  x: number;
+  y: number;
+  radius: number;
+  life: number;
+  color: string;
+}
+
+interface Shot {
+  from: Point;
+  to: Point;
+  life: number;
+}
 
 function inputKindFromPointer(pointerType: string): InputKind {
   if (pointerType === 'touch' || pointerType === 'pen' || pointerType === 'mouse')
@@ -49,12 +78,21 @@ export function OrbitTracker({ onComplete, onExit }: OrbitTrackerProps) {
   const pauseStartedRef = useRef<number | null>(null);
   const pausedMsRef = useRef(0);
   const activeSecondsRef = useRef(0);
+  const meteorsRef = useRef<Meteor[]>([]);
+  const blastsRef = useRef<Blast[]>([]);
+  const shotsRef = useRef<Shot[]>([]);
+  const lastMeteorSpawnRef = useRef(0);
+  const lastShotRef = useRef(0);
+  const shieldEnergyRef = useRef(45);
+  const meteorIdRef = useRef(0);
+  const wasLockedRef = useRef(false);
 
   const level = useAcademyStore((state) => state.progress['orbit-tracker'].level);
   const config = useMemo(() => orbitConfigForLevel(level), [level]);
   const [isPaused, setIsPaused] = useState(false);
   const [remainingSeconds, setRemainingSeconds] = useState(config.durationSeconds);
   const [lockPercent, setLockPercent] = useState(0);
+  const [shieldEnergy, setShieldEnergy] = useState(45);
 
   const finish = useCallback(
     (status: MissionResult['status']) => {
@@ -83,6 +121,8 @@ export function OrbitTracker({ onComplete, onExit }: OrbitTrackerProps) {
           lockPercent: Math.round(finalLockPercent * 100),
           averageDistance: Math.round(averageDistance),
           misses: stats.misses,
+          meteorsDestroyed: stats.meteorsDestroyed,
+          shieldHits: stats.shieldHits,
           path: config.path,
           targetRadius: config.targetRadius,
           speed: config.speed,
@@ -118,6 +158,69 @@ export function OrbitTracker({ onComplete, onExit }: OrbitTrackerProps) {
         context.arc(x, y, radius, 0, Math.PI * 2);
         context.fill();
       }
+      context.restore();
+    };
+
+    const spawnMeteor = (width: number, height: number, target: Point) => {
+      const fromTop = Math.random() > 0.5;
+      const x = fromTop ? Math.random() * width : width + 34;
+      const y = fromTop ? -34 : Math.random() * height;
+      const angle = Math.atan2(target.y - y, target.x - x);
+      const speed = 0.75 + Math.random() * 0.55 + level * 0.018;
+      meteorsRef.current.push({
+        id: meteorIdRef.current,
+        x,
+        y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        radius: 13 + Math.random() * 11,
+        spin: Math.random() * Math.PI,
+      });
+      meteorIdRef.current += 1;
+    };
+
+    const drawMeteor = (meteor: Meteor) => {
+      context.save();
+      context.translate(meteor.x, meteor.y);
+      context.rotate(meteor.spin);
+      context.fillStyle = '#a15d36';
+      context.strokeStyle = '#ffd166';
+      context.lineWidth = 2;
+      context.beginPath();
+      context.moveTo(-meteor.radius, -meteor.radius * 0.2);
+      context.lineTo(-meteor.radius * 0.2, -meteor.radius);
+      context.lineTo(meteor.radius, -meteor.radius * 0.4);
+      context.lineTo(meteor.radius * 0.75, meteor.radius * 0.7);
+      context.lineTo(-meteor.radius * 0.45, meteor.radius);
+      context.closePath();
+      context.fill();
+      context.stroke();
+      context.restore();
+    };
+
+    const drawBlast = (blast: Blast) => {
+      context.save();
+      context.globalAlpha = Math.max(0, blast.life);
+      context.strokeStyle = blast.color;
+      context.lineWidth = 5;
+      context.beginPath();
+      context.arc(blast.x, blast.y, blast.radius * (1.3 - blast.life), 0, Math.PI * 2);
+      context.stroke();
+      context.restore();
+    };
+
+    const drawShot = (shot: Shot) => {
+      context.save();
+      context.globalAlpha = Math.max(0, shot.life);
+      context.strokeStyle = '#ffffff';
+      context.lineWidth = 7;
+      context.beginPath();
+      context.moveTo(shot.from.x, shot.from.y);
+      context.lineTo(shot.to.x, shot.to.y);
+      context.stroke();
+      context.strokeStyle = '#6cf0ff';
+      context.lineWidth = 3;
+      context.stroke();
       context.restore();
     };
 
@@ -165,6 +268,80 @@ export function OrbitTracker({ onComplete, onExit }: OrbitTrackerProps) {
       if (!isLocked && stats.samples % 20 === 0) stats.misses += 1;
       setLockPercent(stats.lockedSamples / stats.samples);
 
+      if (isLocked && !wasLockedRef.current) {
+        playEffect('lock');
+      }
+      wasLockedRef.current = isLocked;
+      shieldEnergyRef.current = Math.max(
+        0,
+        Math.min(100, shieldEnergyRef.current + (isLocked ? 0.48 : -0.2)),
+      );
+      setShieldEnergy(shieldEnergyRef.current);
+
+      const spawnInterval = Math.max(760, 1650 - level * 36);
+      if (now - lastMeteorSpawnRef.current > spawnInterval) {
+        spawnMeteor(width, height, target);
+        lastMeteorSpawnRef.current = now;
+      }
+
+      meteorsRef.current = meteorsRef.current
+        .map((meteor) => ({
+          ...meteor,
+          x: meteor.x + meteor.vx,
+          y: meteor.y + meteor.vy,
+          spin: meteor.spin + 0.035,
+        }))
+        .filter((meteor) => {
+          if (distance(meteor, target) < meteor.radius + config.targetRadius * 0.72) {
+            stats.shieldHits += 1;
+            shieldEnergyRef.current = Math.max(0, shieldEnergyRef.current - 10);
+            blastsRef.current.push({
+              x: meteor.x,
+              y: meteor.y,
+              radius: 48,
+              life: 1,
+              color: '#ff6b9d',
+            });
+            playEffect('warning');
+            return false;
+          }
+          return (
+            meteor.x > -80 && meteor.x < width + 90 && meteor.y > -90 && meteor.y < height + 90
+          );
+        });
+
+      if (isLocked && shieldEnergyRef.current > 20 && now - lastShotRef.current > 520) {
+        const targetMeteor = meteorsRef.current
+          .map((meteor) => ({ meteor, range: distance(meteor, target) }))
+          .sort((a, b) => a.range - b.range)[0]?.meteor;
+        if (targetMeteor) {
+          meteorsRef.current = meteorsRef.current.filter((meteor) => meteor.id !== targetMeteor.id);
+          stats.meteorsDestroyed += 1;
+          shotsRef.current.push({
+            from: { ...target },
+            to: { x: targetMeteor.x, y: targetMeteor.y },
+            life: 1,
+          });
+          blastsRef.current.push({
+            x: targetMeteor.x,
+            y: targetMeteor.y,
+            radius: 62,
+            life: 1,
+            color: '#ffd166',
+          });
+          playEffect('laser');
+          window.setTimeout(() => playEffect('hit'), 70);
+          lastShotRef.current = now;
+        }
+      }
+
+      shotsRef.current = shotsRef.current
+        .map((shot) => ({ ...shot, life: shot.life - 0.08 }))
+        .filter((shot) => shot.life > 0);
+      blastsRef.current = blastsRef.current
+        .map((blast) => ({ ...blast, life: blast.life - 0.045 }))
+        .filter((blast) => blast.life > 0);
+
       context.save();
       context.strokeStyle = 'rgba(108, 240, 255, 0.20)';
       context.lineWidth = 2;
@@ -192,6 +369,10 @@ export function OrbitTracker({ onComplete, onExit }: OrbitTrackerProps) {
         context.restore();
       }
 
+      meteorsRef.current.forEach(drawMeteor);
+      shotsRef.current.forEach(drawShot);
+      blastsRef.current.forEach(drawBlast);
+
       const gradient = context.createRadialGradient(
         target.x,
         target.y,
@@ -217,6 +398,15 @@ export function OrbitTracker({ onComplete, onExit }: OrbitTrackerProps) {
       context.arc(target.x, target.y, config.targetRadius + 4, 0, Math.PI * 2);
       context.stroke();
 
+      context.save();
+      context.globalAlpha = 0.18 + shieldEnergyRef.current / 180;
+      context.strokeStyle = isLocked ? '#7dff9b' : '#ff6b9d';
+      context.lineWidth = 8;
+      context.beginPath();
+      context.arc(target.x, target.y, config.targetRadius + 24, 0, Math.PI * 2);
+      context.stroke();
+      context.restore();
+
       context.fillStyle = '#07111f';
       context.font = '900 18px Verdana';
       context.textAlign = 'center';
@@ -239,10 +429,11 @@ export function OrbitTracker({ onComplete, onExit }: OrbitTrackerProps) {
       window.removeEventListener('resize', resize);
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [config, finish, isPaused]);
+  }, [config, finish, isPaused, level]);
 
   const roundedLock = Math.round(lockPercent * 100);
   const roundedTime = Math.ceil(remainingSeconds);
+  const roundedShield = Math.round(shieldEnergy);
 
   return (
     <div className="flex h-full flex-col p-5">
@@ -259,6 +450,10 @@ export function OrbitTracker({ onComplete, onExit }: OrbitTrackerProps) {
           <div className="rounded-lg border border-white/10 bg-white/7 px-4 py-2 text-center">
             <div className="text-2xl font-black text-success">{roundedLock}%</div>
             <div className="text-xs font-bold uppercase text-white/65">Lock</div>
+          </div>
+          <div className="rounded-lg border border-white/10 bg-white/7 px-4 py-2 text-center">
+            <div className="text-2xl font-black text-comet">{roundedShield}%</div>
+            <div className="text-xs font-bold uppercase text-white/65">Shield</div>
           </div>
           <div className="rounded-lg border border-white/10 bg-white/7 px-4 py-2 text-center">
             <div className="text-2xl font-black text-plasma">{roundedTime}s</div>

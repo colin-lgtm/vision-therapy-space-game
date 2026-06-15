@@ -74,9 +74,13 @@ Run this on the target Surface before giving the app to a child:
 - App opens cleanly in full-screen or large-window mode.
 - Star map fits the Surface screen without overlapping text.
 - Orbit Tracker animation is smooth.
+- Orbit Tracker shows meteors, shield feedback, and lock-on effects.
 - Touch drag keeps the beam attached to the finger.
 - Surface Pen drag works and records as pen input.
 - Mouse drag works and records as mouse input.
+- Mission-card speaker buttons play or speak a briefing after a user tap.
+- Locked mission cards clearly show the star requirement.
+- `Unlock Cards` in Test Lab unlocks the roadmap cards for inspection.
 - Pause/resume does not count against active mission time incorrectly.
 - End button returns to a mission summary.
 - Dashboard shows the completed mission.

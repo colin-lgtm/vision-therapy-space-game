@@ -32,7 +32,7 @@ The renderer never receives direct Node.js access.
   - `main.cjs`: application window, lifecycle, and persistence handlers.
   - `preload.cjs`: safe storage bridge exposed to the renderer.
 - `src/domain/`
-  - Pure TypeScript logic for scoring, levels, orbit math, world definitions, and storage contracts.
+  - Pure TypeScript logic for scoring, levels, orbit math, world definitions, audio helpers, and storage contracts.
 - `src/state/`
   - Zustand store and default state.
 - `src/ui/`
@@ -73,6 +73,14 @@ Future scaling path:
 All game input should use Pointer Events. This lets Surface touch, Surface Pen, mouse, and trackpad share one event pipeline.
 
 Every mission run records `inputKind` so support and QA can detect device-specific problems.
+
+## Audio And Briefings
+
+The current build uses lightweight Web Audio effects and browser speech synthesis:
+
+- Web Audio handles launch, lock, laser, hit, and warning effects.
+- Speech synthesis reads mission briefings after a user taps the speaker button.
+- Future produced audio files can replace these helpers without changing game progression logic.
 
 ## Game Progression
 

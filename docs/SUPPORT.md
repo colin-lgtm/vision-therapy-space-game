@@ -31,6 +31,12 @@ The dashboard shows the latest recorded input type:
 
 If Surface Pen is not detected as pen, check Windows pen settings and browser/Electron pointer event support.
 
+### Unlock Mission Cards For Testing
+
+Use `Unlock Cards` on the star map or `Unlock Cards For Testing` in the grown-up dashboard.
+
+This reveals the roadmap cards so adults can inspect the visuals and audio briefings. It does not make unfinished worlds playable.
+
 ## Troubleshooting
 
 ### App Opens To A Blank Screen

@@ -1,4 +1,5 @@
-import { Download, RotateCcw, Star } from 'lucide-react';
+import { Download, RotateCcw, Star, TestTube2 } from 'lucide-react';
+import { playEffect } from '@/domain/audio';
 import { clearPersistedState } from '@/domain/storage';
 import { worlds } from '@/domain/worlds';
 import { summarizeRecentInput, useAcademyStore } from '@/state/useAcademyStore';
@@ -18,6 +19,7 @@ export function GrownupDashboard() {
   const progress = useAcademyStore((state) => state.progress);
   const missionRuns = useAcademyStore((state) => state.missionRuns);
   const sessions = useAcademyStore((state) => state.sessions);
+  const unlockAllForTesting = useAcademyStore((state) => state.unlockAllForTesting);
 
   function exportJson() {
     downloadText(
@@ -30,6 +32,11 @@ export function GrownupDashboard() {
   async function resetLocalData() {
     await clearPersistedState();
     window.location.reload();
+  }
+
+  async function unlockAll() {
+    playEffect('launch');
+    await unlockAllForTesting();
   }
 
   return (
@@ -130,6 +137,15 @@ export function GrownupDashboard() {
             first playable world is stable.
           </p>
         </div>
+
+        <button
+          className="mt-6 flex min-h-12 w-full items-center justify-center gap-2 rounded-md border border-comet/45 bg-comet/14 px-4 py-2 font-black text-comet hover:bg-comet/20"
+          onClick={unlockAll}
+          type="button"
+        >
+          <TestTube2 className="h-5 w-5" />
+          Unlock Cards For Testing
+        </button>
 
         <button
           className="mt-6 flex min-h-12 w-full items-center justify-center gap-2 rounded-md border border-nebula/45 bg-nebula/12 px-4 py-2 font-black text-nebula hover:bg-nebula/18"
