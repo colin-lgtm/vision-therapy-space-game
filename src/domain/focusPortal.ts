@@ -27,7 +27,7 @@ export function focusPortalConfigForLevel(level: number): FocusPortalConfig {
     durationSeconds: 50 + Math.min(35, Math.floor(clamped / 4) * 5),
     options: Math.min(6, 3 + Math.floor((clamped - 1) / 6)),
     depthChargeMs: Math.max(1500, 3000 - clamped * 55),
-    depthBeacons: Math.min(4, 2 + Math.floor((clamped - 1) / 8)),
+    depthBeacons: Math.min(5, 3 + Math.floor((clamped - 1) / 7)),
     beaconBonusMs: Math.max(280, 520 - clamped * 8),
     scanMs: Math.max(1400, 2600 - clamped * 35),
     glyphScale: Math.max(0.58, 1 - clamped * 0.012),

@@ -50,6 +50,7 @@ interface DepthBeacon {
   xPercent: number;
   yPercent: number;
   size: number;
+  depth: number;
   hit: boolean;
 }
 
@@ -339,6 +340,10 @@ export function FocusPortal({ onComplete, onExit }: FocusPortalProps) {
       : phase === 'depth'
         ? 'Tap depth beacons'
         : 'Pick the match';
+  const scanRuneSize = Math.round(28 * config.glyphScale);
+  const isCodeVisible = phase === 'scan';
+  const tunnelRings = [0.18, 0.3, 0.43, 0.57, 0.72, 0.88, 1.05];
+  const portalSymbol = phase === 'depth' ? '*' : phase === 'choose' ? '?' : '+';
 
   return (
     <div className="flex h-full flex-col p-5">
@@ -408,15 +413,23 @@ export function FocusPortal({ onComplete, onExit }: FocusPortalProps) {
             </div>
 
             <div className="game-hud-panel flex flex-1 flex-col items-center justify-center p-5 text-center">
-              <p className="text-xs font-black uppercase text-comet">Near Rune</p>
+              <p className="text-xs font-black uppercase text-comet">
+                {isCodeVisible ? 'Tiny Code' : 'Code Locked'}
+              </p>
               <div
-                className="mt-5 flex aspect-square w-32 items-center justify-center rounded-lg border border-success/35 bg-black/35 text-center font-black text-success shadow-[0_0_28px_rgba(125,255,155,0.24)]"
-                style={{ fontSize: `${54 * config.glyphScale}px` }}
+                className={clsx(
+                  'mt-5 flex aspect-square w-20 items-center justify-center rounded-lg border text-center font-black shadow-[0_0_28px_rgba(125,255,155,0.24)]',
+                  isCodeVisible
+                    ? 'border-success/35 bg-black/45 text-success'
+                    : 'border-white/14 bg-black/25 text-white/45',
+                )}
+                data-scan-rune-size={scanRuneSize}
+                style={{ fontSize: `${scanRuneSize}px` }}
               >
-                {round.target}
+                {isCodeVisible ? round.target : '••'}
               </div>
               <button
-                className="mt-6 flex min-h-14 w-full items-center justify-center gap-2 rounded-md bg-success px-5 py-3 text-xl font-black text-space-950 shadow-[0_0_24px_rgba(125,255,155,0.28)] disabled:cursor-not-allowed disabled:opacity-45"
+                className="mt-6 flex min-h-14 w-full items-center justify-center gap-2 rounded-md bg-success px-5 py-3 text-xl font-black text-space-950 shadow-[0_0_24px_rgba(125,255,155,0.28)] disabled:cursor-not-allowed disabled:opacity-35"
                 disabled={phase !== 'scan' || isPaused || gameOver}
                 onPointerDown={(event) => divePortal(event.pointerType)}
                 type="button"
@@ -434,31 +447,40 @@ export function FocusPortal({ onComplete, onExit }: FocusPortalProps) {
             data-depth-charge-ms={config.depthChargeMs}
             data-options={config.options}
             data-phase={phase}
+            data-scan-rune-size={scanRuneSize}
           >
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div
-                className={clsx(
-                  'relative flex aspect-square w-[min(54vh,520px)] items-center justify-center rounded-full border-[10px] transition duration-300',
-                  phase === 'depth'
-                    ? 'border-success shadow-[0_0_80px_rgba(125,255,155,0.45)]'
-                    : 'border-plasma/55 shadow-[0_0_52px_rgba(108,240,255,0.2)]',
-                )}
-              >
-                <div className="absolute inset-6 rounded-full border border-white/15" />
-                <div
-                  className="absolute inset-12 rounded-full border-[12px] border-dashed border-comet/65 transition-transform duration-300"
-                  style={{ transform: `rotate(${portalCharge * 260}deg)` }}
-                />
-                <div className="relative z-10 text-center">
-                  <div className="text-7xl font-black text-white drop-shadow-[0_0_18px_rgba(255,255,255,0.25)]">
-                    {phase === 'depth' ? '*' : phase === 'choose' ? '?' : round.target}
-                  </div>
-                  <div className="mt-4 h-3 w-56 overflow-hidden rounded-full bg-white/12">
+            <div className="absolute inset-0 overflow-hidden">
+              <div className="absolute left-1/2 top-1/2 h-[88%] w-[88%] -translate-x-1/2 -translate-y-1/2">
+                {tunnelRings.map((scale, index) => {
+                  const depthOffset = phase === 'depth' ? portalCharge * (index + 1) * 8 : 0;
+                  return (
                     <div
-                      className="h-full rounded-full bg-success transition-all"
-                      style={{ width: `${Math.round(portalCharge * 100)}%` }}
+                      aria-hidden="true"
+                      className={clsx(
+                        'absolute left-1/2 top-1/2 aspect-square rounded-full border transition-all duration-300',
+                        index % 2 === 0 ? 'border-success/55' : 'border-comet/45',
+                      )}
+                      key={scale}
+                      style={{
+                        opacity: 0.2 + index * 0.08,
+                        transform: `translate(-50%, -50%) rotateX(62deg) rotate(${portalCharge * 80 + index * 8}deg) scale(${scale + depthOffset / 100})`,
+                        width: '76%',
+                      }}
                     />
-                  </div>
+                  );
+                })}
+              </div>
+
+              <div className="absolute left-1/2 top-1/2 h-14 w-14 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/12 bg-white/5 shadow-[0_0_36px_rgba(108,240,255,0.22)]" />
+              <div className="absolute bottom-16 left-1/2 h-3 w-56 -translate-x-1/2 overflow-hidden rounded-full bg-white/12">
+                <div
+                  className="h-full rounded-full bg-success transition-all"
+                  style={{ width: `${Math.round(portalCharge * 100)}%` }}
+                />
+              </div>
+              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-[54%] text-center">
+                <div className="text-7xl font-black text-white drop-shadow-[0_0_18px_rgba(255,255,255,0.25)]">
+                  {portalSymbol}
                 </div>
               </div>
             </div>
@@ -473,13 +495,16 @@ export function FocusPortal({ onComplete, onExit }: FocusPortalProps) {
                   )}
                   disabled={beacon.hit}
                   key={beacon.id}
+                  data-depth={beacon.depth.toFixed(2)}
                   onPointerDown={(event) => hitDepthBeacon(beacon.id, event.pointerType)}
                   style={{
                     height: beacon.size,
                     left: `${beacon.xPercent}%`,
+                    opacity: beacon.hit ? 0.2 : 0.62 + beacon.depth * 0.36,
                     top: `${beacon.yPercent}%`,
                     transform: 'translate(-50%, -50%)',
                     width: beacon.size,
+                    zIndex: Math.round(beacon.depth * 10),
                   }}
                   type="button"
                 />
@@ -572,18 +597,19 @@ function makeRound(optionCount: number, offset = 0, now = performance.now()): Po
 }
 
 function makeDepthBeacons(count: number, offset = 0): DepthBeacon[] {
-  const anchors = [
-    { xPercent: 28, yPercent: 32 },
-    { xPercent: 72, yPercent: 36 },
-    { xPercent: 62, yPercent: 68 },
-    { xPercent: 36, yPercent: 66 },
-  ];
+  return Array.from({ length: count }).map((_, index) => {
+    const depth = 0.28 + (index / Math.max(1, count - 1)) * 0.58;
+    const angle = offset * 0.52 + index * 2.18 + 0.4;
+    const radiusX = 12 + depth * 31;
+    const radiusY = 7 + depth * 23;
 
-  return anchors.slice(0, count).map((anchor, index) => ({
-    id: index,
-    xPercent: anchor.xPercent + Math.sin(offset + index) * 4,
-    yPercent: anchor.yPercent + Math.cos(offset * 0.7 + index) * 4,
-    size: 52 - index * 3,
-    hit: false,
-  }));
+    return {
+      id: index,
+      xPercent: 50 + Math.cos(angle) * radiusX,
+      yPercent: 50 + Math.sin(angle) * radiusY,
+      size: Math.round(24 + depth * 42),
+      depth,
+      hit: false,
+    };
+  });
 }

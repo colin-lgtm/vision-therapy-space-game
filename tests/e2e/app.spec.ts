@@ -111,12 +111,14 @@ test('test lab unlocks and launches Focus Portal', async ({ page }) => {
   await expect(surface).toBeVisible();
   await expect(surface).toHaveAttribute('data-phase', 'scan');
   await expect(surface).toHaveAttribute('data-options', '3');
-  await expect(surface).toHaveAttribute('data-depth-beacons', '2');
+  await expect(surface).toHaveAttribute('data-depth-beacons', '3');
+  await expect(surface).toHaveAttribute('data-scan-rune-size', '28');
 
   await page.getByRole('button', { name: 'Dive Portal' }).click();
   await expect(surface).toHaveAttribute('data-phase', 'depth');
   await expect(page.getByRole('button', { name: 'Charge depth beacon 1' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Charge depth beacon 2' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Charge depth beacon 3' })).toBeVisible();
 });
 
 test('dashboard is available for grown-up review', async ({ page }) => {
