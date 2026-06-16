@@ -71,13 +71,13 @@ function summaryMetrics(result: MissionResult) {
     return [
       { label: 'Score', value: result.score, color: 'text-comet' },
       {
-        label: 'Rune Accuracy',
+        label: 'Code Accuracy',
         value: `${metricNumber(result.metrics.accuracy)}%`,
         color: 'text-success',
       },
       {
-        label: 'Beacons',
-        value: metricNumber(result.metrics.beaconHits),
+        label: 'Crashes',
+        value: metricNumber(result.metrics.crashes),
         color: 'text-plasma',
       },
     ];

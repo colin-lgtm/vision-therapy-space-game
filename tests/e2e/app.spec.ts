@@ -53,6 +53,16 @@ async function expectGameSurfaceHasRoom(
   expect(box?.height).toBeGreaterThan(minimum.height);
 }
 
+async function expectAnswerDeckBelowFlightArea(page: import('@playwright/test').Page) {
+  const surface = page.getByLabel('Focus Portal game surface');
+  const flightBox = await surface.locator('[data-flight-area="true"]').boundingBox();
+  const deckBox = await surface.locator('[data-answer-deck="true"]').boundingBox();
+
+  expect(flightBox).toBeTruthy();
+  expect(deckBox).toBeTruthy();
+  expect((flightBox?.y ?? 0) + (flightBox?.height ?? 0)).toBeLessThanOrEqual((deckBox?.y ?? 0) + 1);
+}
+
 async function expectCanvasHudCopyFits(page: import('@playwright/test').Page, label: string) {
   const surface = page.getByLabel(label);
   const copy = await surface.getAttribute('data-hud-copy');
@@ -106,19 +116,31 @@ test('test lab unlocks and launches Focus Portal', async ({ page }) => {
   await page.getByRole('button', { name: 'Unlock Cards' }).click();
   await page.getByRole('button', { name: 'Launch Mission: Focus Portal' }).click();
 
-  await expect(page.getByText('Dive the depth portal')).toBeVisible();
+  await expect(page.getByText('Stop the crash codes')).toBeVisible();
   const surface = page.getByLabel('Focus Portal game surface');
   await expect(surface).toBeVisible();
-  await expect(surface).toHaveAttribute('data-phase', 'scan');
+  await expect(surface).toHaveAttribute('data-phase', 'incoming');
   await expect(surface).toHaveAttribute('data-options', '3');
-  await expect(surface).toHaveAttribute('data-depth-beacons', '3');
-  await expect(surface).toHaveAttribute('data-scan-rune-size', '28');
+  await expect(surface).toHaveAttribute('data-decoys', '3');
+  await expect(surface).toHaveAttribute('data-hull', '4');
+  await expectAnswerDeckBelowFlightArea(page);
 
-  await page.getByRole('button', { name: 'Dive Portal' }).click();
-  await expect(surface).toHaveAttribute('data-phase', 'depth');
-  await expect(page.getByRole('button', { name: 'Charge depth beacon 1' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Charge depth beacon 2' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Charge depth beacon 3' })).toBeVisible();
+  const initialScale = Number(await surface.getAttribute('data-target-scale'));
+  await expect
+    .poll(async () => Number(await surface.getAttribute('data-target-scale')))
+    .toBeGreaterThan(initialScale + 1);
+
+  const targetCode = await surface.getAttribute('data-target-code');
+  const wrongCode = await surface
+    .locator('[data-answer-deck="true"] button')
+    .evaluateAll(
+      (buttons, target) =>
+        buttons.map((button) => button.textContent?.trim() ?? '').find((code) => code !== target),
+      targetCode,
+    );
+  expect(wrongCode).toBeTruthy();
+  await page.getByRole('button', { name: `Code ${wrongCode}` }).click();
+  await expect(surface).toHaveAttribute('data-hull', '3');
 });
 
 test('dashboard is available for grown-up review', async ({ page }) => {
@@ -150,8 +172,9 @@ test('core screens keep clean visual boundaries', async ({ page }) => {
 
   await page.getByRole('button', { name: 'Star Map' }).click();
   await page.getByRole('button', { name: 'Launch Mission: Focus Portal' }).click();
-  await expect(page.getByText('Dive the depth portal')).toBeVisible();
+  await expect(page.getByText('Stop the crash codes')).toBeVisible();
   await expectGameSurfaceHasRoom(page, 'Focus Portal game surface', { width: 650, height: 560 });
+  await expectAnswerDeckBelowFlightArea(page);
   await expectCleanViewport(page);
 
   await page.getByRole('button', { name: 'Dashboard' }).click();

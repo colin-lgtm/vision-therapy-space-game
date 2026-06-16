@@ -310,10 +310,12 @@ function MissionIllustration({ world, locked }: { world: WorldDefinition; locked
       )}
       {world.visualKind === 'portal' && (
         <>
-          <div className="art-portal" />
-          <div className="art-rune art-rune-one">Z</div>
-          <div className="art-rune art-rune-two">7</div>
-          <div className="art-depth-beacon" />
+          <div className="art-focus-ring" />
+          <div className="art-threat-code">Z</div>
+          <div className="art-threat-code art-threat-code-far">7</div>
+          <div className="art-crash-meteor art-crash-meteor-one" />
+          <div className="art-crash-meteor art-crash-meteor-two" />
+          <div className="art-cockpit-shield" />
         </>
       )}
       {world.visualKind === 'decoder' && (

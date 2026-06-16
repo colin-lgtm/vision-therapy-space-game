@@ -48,10 +48,10 @@ export const worlds: WorldDefinition[] = [
     name: 'Focus Portal',
     shortName: 'Portal',
     diagnosisTarget: 'Accommodation shifts, visual attention, and symbol memory',
-    gameGoal: 'Scan tiny runes, dive the depth tunnel, and match the portal code.',
-    playerAction: 'Read the small rune, tap depth beacons, then choose the matching symbol.',
+    gameGoal: 'Stop coded space threats before they crash into the ship.',
+    playerAction: 'Watch the tiny incoming code grow, wait for the focus zone, then tap its match.',
     briefing:
-      'Focus Portal. Read the tiny rune, dive through the depth tunnel, tap glowing beacons, then choose the matching rune to stabilize the portal.',
+      'Focus Portal. Watch the tiny code flying toward the ship. When it reaches the green focus zone, tap the matching code before impact. Ignore the meteor decoys.',
     color: '#7dff9b',
     unlockStars: 12,
     enabledInMvp: true,
