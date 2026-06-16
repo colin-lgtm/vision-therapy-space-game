@@ -1,4 +1,4 @@
-import { Download, RotateCcw, Star, TestTube2 } from 'lucide-react';
+import { Download, FileSpreadsheet, RotateCcw, Star, TestTube2 } from 'lucide-react';
 import { playEffect } from '@/domain/audio';
 import { clearPersistedState } from '@/domain/storage';
 import { worlds } from '@/domain/worlds';
@@ -29,6 +29,53 @@ export function GrownupDashboard() {
     );
   }
 
+  function exportCsv() {
+    const rows = [
+      ['endedAt', 'world', 'level', 'score', 'starsEarned', 'inputKind', 'status'],
+      ...missionRuns.map((run) => [
+        run.endedAt,
+        run.worldId,
+        run.level.toString(),
+        run.score.toString(),
+        run.starsEarned.toString(),
+        run.inputKind,
+        run.status,
+      ]),
+    ];
+    downloadText(
+      `nate-o-vision-missions-${new Date().toISOString().slice(0, 10)}.csv`,
+      rows.map((row) => row.map(csvCell).join(',')).join('\n'),
+      'text/csv',
+    );
+  }
+
+  function exportSummary() {
+    const worldLines = worlds.map((world) => {
+      const item = progress[world.id];
+      return `${world.name}: level ${Math.max(1, item.level)}, best ${item.bestScore}, plays ${item.plays}, stars ${item.stars}`;
+    });
+    downloadText(
+      `nate-o-vision-summary-${new Date().toISOString().slice(0, 10)}.txt`,
+      [
+        `Nate-O-Vision Progress Summary`,
+        `Generated: ${new Date().toLocaleString()}`,
+        `Total stars: ${profile.totalStars}`,
+        `Rank: ${profile.rank}`,
+        `Sessions: ${sessions.length}`,
+        '',
+        'World Progress',
+        ...worldLines,
+        '',
+        'Recent Missions',
+        ...missionRuns.slice(0, 20).map((run) => {
+          const world = worlds.find((item) => item.id === run.worldId)?.name ?? run.worldId;
+          return `${new Date(run.endedAt).toLocaleString()} - ${world} L${run.level}, score ${run.score}, ${run.starsEarned} stars, ${run.inputKind}`;
+        }),
+      ].join('\n'),
+      'text/plain',
+    );
+  }
+
   async function resetLocalData() {
     await clearPersistedState();
     window.location.reload();
@@ -47,14 +94,32 @@ export function GrownupDashboard() {
             <p className="text-sm font-bold uppercase text-plasma">Grown-up Dashboard</p>
             <h1 className="text-3xl font-black">Progress and exports</h1>
           </div>
-          <button
-            className="flex min-h-12 items-center gap-2 rounded-md bg-plasma px-4 py-2 font-black text-space-950 shadow-glow"
-            onClick={exportJson}
-            type="button"
-          >
-            <Download className="h-5 w-5" />
-            Export JSON
-          </button>
+          <div className="flex flex-wrap justify-end gap-2">
+            <button
+              className="flex min-h-12 items-center gap-2 rounded-md bg-plasma px-4 py-2 font-black text-space-950 shadow-glow"
+              onClick={exportSummary}
+              type="button"
+            >
+              <Download className="h-5 w-5" />
+              Summary
+            </button>
+            <button
+              className="flex min-h-12 items-center gap-2 rounded-md border border-white/12 bg-white/8 px-4 py-2 font-black text-white hover:bg-white/12"
+              onClick={exportCsv}
+              type="button"
+            >
+              <FileSpreadsheet className="h-5 w-5" />
+              CSV
+            </button>
+            <button
+              className="flex min-h-12 items-center gap-2 rounded-md border border-white/12 bg-white/8 px-4 py-2 font-black text-white hover:bg-white/12"
+              onClick={exportJson}
+              type="button"
+            >
+              <Download className="h-5 w-5" />
+              JSON
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-4 gap-3">
@@ -62,6 +127,17 @@ export function GrownupDashboard() {
           <Stat label="Rank" value={profile.rank} />
           <Stat label="Sessions" value={sessions.length.toString()} />
           <Stat label="Latest Input" value={summarizeRecentInput(missionRuns)} />
+        </div>
+
+        <div className="mt-8 grid grid-cols-[1.1fr_0.9fr] gap-4">
+          <section className="rounded-lg border border-white/10 bg-white/7 p-4">
+            <h2 className="text-xl font-black">Score Trend</h2>
+            <ScoreTrend runs={missionRuns.slice(0, 12).reverse()} />
+          </section>
+          <section className="rounded-lg border border-white/10 bg-white/7 p-4">
+            <h2 className="text-xl font-black">Stars By World</h2>
+            <WorldBars progress={progress} />
+          </section>
         </div>
 
         <h2 className="mb-3 mt-8 text-xl font-black">World Progress</h2>
@@ -87,6 +163,9 @@ export function GrownupDashboard() {
             );
           })}
         </div>
+
+        <h2 className="mb-3 mt-8 text-xl font-black">Session History</h2>
+        <SessionHistory sessions={sessions} />
 
         <h2 className="mb-3 mt-8 text-xl font-black">Recent Missions</h2>
         <div className="overflow-hidden rounded-lg border border-white/10">
@@ -176,4 +255,96 @@ function MiniStat({ label, value }: { label: string; value: string }) {
       <div className="text-[10px] font-bold uppercase text-white/50">{label}</div>
     </div>
   );
+}
+
+function ScoreTrend({
+  runs,
+}: {
+  runs: ReturnType<typeof useAcademyStore.getState>['missionRuns'];
+}) {
+  if (runs.length === 0) {
+    return <p className="mt-4 text-sm text-white/55">No score trend yet.</p>;
+  }
+
+  return (
+    <div className="mt-4 flex h-36 items-end gap-2">
+      {runs.map((run) => {
+        const height = Math.max(8, Math.round((run.score / 1000) * 128));
+        const world = worlds.find((item) => item.id === run.worldId);
+        return (
+          <div className="flex flex-1 flex-col items-center gap-2" key={run.id}>
+            <div
+              className="w-full rounded-t-md shadow-[0_0_18px_rgba(108,240,255,0.18)]"
+              style={{ backgroundColor: world?.color ?? '#6cf0ff', height }}
+              title={`${world?.name ?? run.worldId}: ${run.score}`}
+            />
+            <div className="text-[10px] font-black uppercase text-white/45">{run.score}</div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function WorldBars({
+  progress,
+}: {
+  progress: ReturnType<typeof useAcademyStore.getState>['progress'];
+}) {
+  const maxStars = Math.max(1, ...worlds.map((world) => progress[world.id].stars));
+  return (
+    <div className="mt-4 space-y-3">
+      {worlds.map((world) => {
+        const item = progress[world.id];
+        const width = Math.max(4, Math.round((item.stars / maxStars) * 100));
+        return (
+          <div key={world.id}>
+            <div className="mb-1 flex justify-between text-xs font-black uppercase text-white/60">
+              <span>{world.shortName}</span>
+              <span>{item.stars} stars</span>
+            </div>
+            <div className="h-3 overflow-hidden rounded-full bg-black/30">
+              <div
+                className="h-full rounded-full"
+                style={{ backgroundColor: world.color, width: `${width}%` }}
+              />
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function SessionHistory({
+  sessions,
+}: {
+  sessions: ReturnType<typeof useAcademyStore.getState>['sessions'];
+}) {
+  if (sessions.length === 0) {
+    return (
+      <div className="rounded-lg border border-white/10 bg-white/7 p-4 text-sm text-white/55">
+        No sessions yet.
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-3 gap-3">
+      {sessions.slice(0, 6).map((session) => (
+        <div className="rounded-lg border border-white/10 bg-white/7 p-4" key={session.id}>
+          <div className="text-sm font-black">{new Date(session.endedAt).toLocaleDateString()}</div>
+          <div className="mt-2 text-2xl font-black text-comet">{session.starsEarned}</div>
+          <div className="text-xs font-bold uppercase text-white/55">Stars Earned</div>
+          <div className="mt-2 text-xs text-white/55">
+            {Math.round(session.activeSeconds / 60)} min
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function csvCell(value: string) {
+  return `"${value.replaceAll('"', '""')}"`;
 }

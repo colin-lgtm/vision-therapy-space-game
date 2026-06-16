@@ -4,6 +4,7 @@ import {
   nextLevelForProgress,
   rankForStars,
   starsForScore,
+  unlockCosmetics,
 } from '@/domain/progression';
 import type { MissionResult, WorldProgress } from '@/domain/types';
 
@@ -48,5 +49,11 @@ describe('progression', () => {
     expect(rankForStars(0)).toBe('Launch Recruit');
     expect(rankForStars(16)).toBe('Star Cadet');
     expect(rankForStars(250)).toBe('Galaxy Commander');
+  });
+
+  it('adds deeper cosmetic rewards at high star totals', () => {
+    expect(unlockCosmetics(0)).toContain('Starter Ship');
+    expect(unlockCosmetics(120)).toContain('Alien Co-Pilot');
+    expect(unlockCosmetics(240)).toContain('Commander Trail');
   });
 });

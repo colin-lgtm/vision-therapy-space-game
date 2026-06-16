@@ -80,11 +80,17 @@ async function expectCanvasHudCopyFits(page: import('@playwright/test').Page, la
   expect(width - padding * 2).toBeGreaterThanOrEqual(estimatedTextWidth);
 }
 
+async function launchMission(page: import('@playwright/test').Page, missionName: string) {
+  await page.getByRole('button', { name: `Launch Mission: ${missionName}` }).click();
+  await expect(page.getByRole('button', { name: `Start Mission: ${missionName}` })).toBeVisible();
+  await page.getByRole('button', { name: `Start Mission: ${missionName}` }).click();
+}
+
 test('star map launches Orbit Tracker', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByText("Choose today's mission")).toBeVisible();
 
-  await page.getByRole('button', { name: 'Launch Mission: Orbit Tracker' }).click();
+  await launchMission(page, 'Orbit Tracker');
 
   await expect(page.getByText('Keep the beam locked')).toBeVisible();
   const surface = page.getByLabel('Orbit Tracker game surface');
@@ -98,7 +104,7 @@ test('star map launches Orbit Tracker', async ({ page }) => {
 test('test lab unlocks and launches Star Jumper', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Unlock Cards' }).click();
-  await page.getByRole('button', { name: 'Launch Mission: Star Jumper' }).click();
+  await launchMission(page, 'Star Jumper');
 
   await expect(page.getByText('Jump to the red gate')).toBeVisible();
   const surface = page.getByLabel('Star Jumper game surface');
@@ -114,7 +120,7 @@ test('test lab unlocks and launches Star Jumper', async ({ page }) => {
 test('test lab unlocks and launches Focus Portal', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Unlock Cards' }).click();
-  await page.getByRole('button', { name: 'Launch Mission: Focus Portal' }).click();
+  await launchMission(page, 'Focus Portal');
 
   await expect(page.getByText('Stop the crash codes')).toBeVisible();
   const surface = page.getByLabel('Focus Portal game surface');
@@ -154,7 +160,7 @@ test('test lab unlocks and launches Focus Portal', async ({ page }) => {
 test('test lab unlocks and launches Dual-Signal Decoder', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Unlock Cards' }).click();
-  await page.getByRole('button', { name: 'Launch Mission: Dual-Signal Decoder' }).click();
+  await launchMission(page, 'Dual-Signal Decoder');
 
   await expect(page.getByText('Match both signals')).toBeVisible();
   const surface = page.getByLabel('Dual-Signal Decoder game surface');
@@ -174,6 +180,16 @@ test('dashboard is available for grown-up review', async ({ page }) => {
 
   await expect(page.getByText('Progress and exports')).toBeVisible();
   await expect(page.getByText('World Progress')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Score Trend' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'CSV' })).toBeVisible();
+
+  const csvDownload = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'CSV' }).click();
+  await expect((await csvDownload).suggestedFilename()).toContain('nate-o-vision-missions');
+
+  const summaryDownload = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Summary' }).click();
+  await expect((await summaryDownload).suggestedFilename()).toContain('nate-o-vision-summary');
 });
 
 test('core screens keep clean visual boundaries', async ({ page }) => {
@@ -181,7 +197,7 @@ test('core screens keep clean visual boundaries', async ({ page }) => {
   await expect(page.getByText("Choose today's mission")).toBeVisible();
   await expectCleanViewport(page);
 
-  await page.getByRole('button', { name: 'Launch Mission: Orbit Tracker' }).click();
+  await launchMission(page, 'Orbit Tracker');
   await expect(page.getByText('Keep the beam locked')).toBeVisible();
   await expectGameSurfaceHasRoom(page, 'Orbit Tracker game surface');
   await expectCanvasHudCopyFits(page, 'Orbit Tracker game surface');
@@ -189,21 +205,21 @@ test('core screens keep clean visual boundaries', async ({ page }) => {
 
   await page.getByRole('button', { name: 'Star Map' }).click();
   await page.getByRole('button', { name: 'Unlock Cards' }).click();
-  await page.getByRole('button', { name: 'Launch Mission: Star Jumper' }).click();
+  await launchMission(page, 'Star Jumper');
   await expect(page.getByText('Jump to the red gate')).toBeVisible();
   await expectGameSurfaceHasRoom(page, 'Star Jumper game surface');
   await expectCanvasHudCopyFits(page, 'Star Jumper game surface');
   await expectCleanViewport(page);
 
   await page.getByRole('button', { name: 'Star Map' }).click();
-  await page.getByRole('button', { name: 'Launch Mission: Focus Portal' }).click();
+  await launchMission(page, 'Focus Portal');
   await expect(page.getByText('Stop the crash codes')).toBeVisible();
   await expectGameSurfaceHasRoom(page, 'Focus Portal game surface', { width: 650, height: 560 });
   await expectAnswerDeckBelowFlightArea(page);
   await expectCleanViewport(page);
 
   await page.getByRole('button', { name: 'Star Map' }).click();
-  await page.getByRole('button', { name: 'Launch Mission: Dual-Signal Decoder' }).click();
+  await launchMission(page, 'Dual-Signal Decoder');
   await expect(page.getByText('Match both signals')).toBeVisible();
   await expectGameSurfaceHasRoom(page, 'Dual-Signal Decoder game surface', {
     width: 650,

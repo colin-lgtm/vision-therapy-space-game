@@ -37,5 +37,8 @@ export function unlockCosmetics(totalStars: number): string[] {
   if (totalStars >= 18) unlocks.push('Gold Comet Badge');
   if (totalStars >= 36) unlocks.push('Nebula Wings');
   if (totalStars >= 72) unlocks.push('Plasma Cockpit');
+  if (totalStars >= 120) unlocks.push('Alien Co-Pilot');
+  if (totalStars >= 180) unlocks.push('Galaxy Shield');
+  if (totalStars >= 240) unlocks.push('Commander Trail');
   return unlocks;
 }

@@ -5,6 +5,7 @@ import { FocusPortal } from './games/FocusPortal';
 import { OrbitTracker } from './games/OrbitTracker';
 import { StarJumper } from './games/StarJumper';
 import { GrownupDashboard } from './screens/GrownupDashboard';
+import { MissionIntro } from './screens/MissionIntro';
 import { MissionSummary } from './screens/MissionSummary';
 import { StarMap } from './screens/StarMap';
 import { useAcademyStore } from '@/state/useAcademyStore';
@@ -12,6 +13,7 @@ import type { MissionResult, WorldId } from '@/domain/types';
 
 type Screen =
   | { name: 'map' }
+  | { name: 'intro'; worldId: WorldId }
   | { name: 'mission'; worldId: WorldId }
   | { name: 'summary'; result: MissionResult }
   | { name: 'dashboard' };
@@ -93,7 +95,14 @@ export function App() {
 
       <section className="min-h-0 flex-1">
         {screen.name === 'map' && (
-          <StarMap onLaunchWorld={(worldId) => setScreen({ name: 'mission', worldId })} />
+          <StarMap onLaunchWorld={(worldId) => setScreen({ name: 'intro', worldId })} />
+        )}
+        {screen.name === 'intro' && (
+          <MissionIntro
+            onBack={() => setScreen({ name: 'map' })}
+            onStart={() => setScreen({ name: 'mission', worldId: screen.worldId })}
+            worldId={screen.worldId}
+          />
         )}
         {screen.name === 'mission' && screen.worldId === 'orbit-tracker' && (
           <OrbitTracker onComplete={completeMission} onExit={() => setScreen({ name: 'map' })} />

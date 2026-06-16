@@ -8,6 +8,7 @@ files:
   - dist-electron/**
   - package.json
 win:
+  icon: build/icon.ico
   target:
     - nsis
   artifactName: Nate-O-Vision-Space-Academy-${version}.${ext}
@@ -15,3 +16,7 @@ nsis:
   oneClick: false
   perMachine: false
   allowToChangeInstallationDirectory: true
+  shortcutName: Nate-O-Vision Space Academy
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  menuCategory: Nate-O-Vision

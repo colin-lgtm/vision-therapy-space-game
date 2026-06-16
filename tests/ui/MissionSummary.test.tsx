@@ -70,4 +70,26 @@ describe('MissionSummary', () => {
     expect(screen.getByText('Best Combo')).toBeInTheDocument();
     expect(screen.queryByText('Beam Lock')).not.toBeInTheDocument();
   });
+
+  it('shows the alien coach and award callout after a strong run', () => {
+    const result: MissionResult = {
+      worldId: 'focus-portal',
+      level: 2,
+      inputKind: 'touch',
+      status: 'completed',
+      score: 920,
+      activeSeconds: 50,
+      metrics: {
+        accuracy: 96,
+        completedCycles: 12,
+        crashes: 0,
+      },
+    };
+
+    render(<MissionSummary result={result} onContinue={vi.fn()} />);
+
+    expect(screen.getByText('Coach Zib')).toBeInTheDocument();
+    expect(screen.getByText('Legendary Star Award')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Hear It' })).toBeInTheDocument();
+  });
 });

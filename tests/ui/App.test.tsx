@@ -25,6 +25,10 @@ describe('App', () => {
     await userEvent.click(
       await screen.findByRole('button', { name: 'Launch Mission: Orbit Tracker' }),
     );
+    expect(await screen.findByText('Track')).toBeInTheDocument();
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Start Mission: Orbit Tracker' }),
+    );
 
     expect(await screen.findByText('Keep the beam locked')).toBeInTheDocument();
     expect(screen.getByLabelText('Orbit Tracker game surface')).toBeInTheDocument();
@@ -36,6 +40,10 @@ describe('App', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Unlock Cards' }));
     await userEvent.click(
       await screen.findByRole('button', { name: 'Launch Mission: Star Jumper' }),
+    );
+    expect(await screen.findByText('Start')).toBeInTheDocument();
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Start Mission: Star Jumper' }),
     );
 
     expect(await screen.findByText('Jump to the red gate')).toBeInTheDocument();
@@ -49,6 +57,10 @@ describe('App', () => {
     await userEvent.click(
       await screen.findByRole('button', { name: 'Launch Mission: Focus Portal' }),
     );
+    expect(await screen.findByText('Watch')).toBeInTheDocument();
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Start Mission: Focus Portal' }),
+    );
 
     expect(await screen.findByText('Stop the crash codes')).toBeInTheDocument();
     expect(screen.getByLabelText('Focus Portal game surface')).toBeInTheDocument();
@@ -60,6 +72,10 @@ describe('App', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Unlock Cards' }));
     await userEvent.click(
       await screen.findByRole('button', { name: 'Launch Mission: Dual-Signal Decoder' }),
+    );
+    expect(await screen.findByText('Red')).toBeInTheDocument();
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Start Mission: Dual-Signal Decoder' }),
     );
 
     expect(await screen.findByText('Match both signals')).toBeInTheDocument();

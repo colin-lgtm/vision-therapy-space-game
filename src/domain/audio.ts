@@ -1,4 +1,13 @@
-type EffectName = 'launch' | 'briefing' | 'lock' | 'laser' | 'hit' | 'warning' | 'complete';
+type EffectName =
+  | 'launch'
+  | 'briefing'
+  | 'lock'
+  | 'laser'
+  | 'hit'
+  | 'warning'
+  | 'complete'
+  | 'star'
+  | 'award';
 
 let audioContext: AudioContext | null = null;
 
@@ -58,6 +67,19 @@ export function playEffect(effect: EffectName) {
 
   if (effect === 'warning') {
     tone(180, 0.11, 'triangle', 0.04);
+    return;
+  }
+
+  if (effect === 'star') {
+    tone(784, 0.07, 'sine', 0.035);
+    window.setTimeout(() => tone(1046, 0.08, 'sine', 0.035), 55);
+    return;
+  }
+
+  if (effect === 'award') {
+    tone(523, 0.08, 'triangle', 0.04);
+    window.setTimeout(() => tone(784, 0.1, 'triangle', 0.045), 85);
+    window.setTimeout(() => tone(1175, 0.16, 'sine', 0.04), 180);
     return;
   }
 
