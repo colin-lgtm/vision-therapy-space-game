@@ -68,6 +68,8 @@ function applyMissionResult(state: AcademyState, result: MissionResult): Academy
     unlockedWorlds.push('star-jumper');
   if (totalStars >= 12 && !unlockedWorlds.includes('focus-portal'))
     unlockedWorlds.push('focus-portal');
+  if (totalStars >= 18 && !unlockedWorlds.includes('dual-signal'))
+    unlockedWorlds.push('dual-signal');
 
   return {
     ...state,

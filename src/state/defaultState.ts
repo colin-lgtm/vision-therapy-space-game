@@ -1,6 +1,6 @@
 import type { AcademyState, WorldId, WorldProgress } from '@/domain/types';
 
-const enabledWorlds: WorldId[] = ['orbit-tracker', 'star-jumper', 'focus-portal'];
+const enabledWorlds: WorldId[] = ['orbit-tracker', 'star-jumper', 'focus-portal', 'dual-signal'];
 
 function progress(worldId: WorldId): WorldProgress {
   return {
@@ -30,7 +30,7 @@ export function createDefaultState(): AcademyState {
         'orbit-tracker': 30,
         'star-jumper': 30,
         'focus-portal': 30,
-        'dual-signal': 5,
+        'dual-signal': 30,
       },
     },
     progress: {

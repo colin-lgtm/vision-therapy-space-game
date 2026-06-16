@@ -48,4 +48,26 @@ describe('MissionSummary', () => {
     expect(screen.getByText('Stops')).toBeInTheDocument();
     expect(screen.queryByText('Crashes')).not.toBeInTheDocument();
   });
+
+  it('shows Dual-Signal Decoder metrics instead of Orbit Tracker beam lock metrics', () => {
+    const result: MissionResult = {
+      worldId: 'dual-signal',
+      level: 1,
+      inputKind: 'touch',
+      status: 'completed',
+      score: 720,
+      activeSeconds: 50,
+      metrics: {
+        accuracy: 88,
+        bestCombo: 4,
+        decodedPairs: 10,
+      },
+    };
+
+    render(<MissionSummary result={result} onContinue={vi.fn()} />);
+
+    expect(screen.getByText('Signal Accuracy')).toBeInTheDocument();
+    expect(screen.getByText('Best Combo')).toBeInTheDocument();
+    expect(screen.queryByText('Beam Lock')).not.toBeInTheDocument();
+  });
 });

@@ -62,13 +62,13 @@ export const worlds: WorldDefinition[] = [
     name: 'Dual-Signal Decoder',
     shortName: 'Decoder',
     diagnosisTarget: 'Binocular awareness and eye teaming',
-    gameGoal: 'Read both alien signals and unlock the shield.',
-    playerAction: 'Use the color glasses setup and report both signals.',
+    gameGoal: 'Match the red and cyan alien signals to power the shield.',
+    playerAction: 'Read both signal towers, then tap the combined code before the beams collapse.',
     briefing:
-      'Dual Signal Decoder. Two alien signals appear at once. Decode both signals to calibrate the academy shield.',
+      'Dual Signal Decoder. A red code and a cyan code appear at the same time. Tap the matching combined code to charge the academy shield.',
     color: '#ff6b9d',
     unlockStars: 18,
-    enabledInMvp: false,
+    enabledInMvp: true,
     visualKind: 'decoder',
   },
 ];

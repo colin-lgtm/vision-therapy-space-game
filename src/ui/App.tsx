@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Activity, BarChart3, Rocket, Settings } from 'lucide-react';
+import { DualSignalDecoder } from './games/DualSignalDecoder';
 import { FocusPortal } from './games/FocusPortal';
 import { OrbitTracker } from './games/OrbitTracker';
 import { StarJumper } from './games/StarJumper';
@@ -102,6 +103,12 @@ export function App() {
         )}
         {screen.name === 'mission' && screen.worldId === 'focus-portal' && (
           <FocusPortal onComplete={completeMission} onExit={() => setScreen({ name: 'map' })} />
+        )}
+        {screen.name === 'mission' && screen.worldId === 'dual-signal' && (
+          <DualSignalDecoder
+            onComplete={completeMission}
+            onExit={() => setScreen({ name: 'map' })}
+          />
         )}
         {screen.name === 'summary' && (
           <MissionSummary result={screen.result} onContinue={() => setScreen({ name: 'map' })} />

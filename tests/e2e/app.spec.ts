@@ -151,6 +151,23 @@ test('test lab unlocks and launches Focus Portal', async ({ page }) => {
   await expect(surface).toHaveAttribute('data-hull', '3');
 });
 
+test('test lab unlocks and launches Dual-Signal Decoder', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Unlock Cards' }).click();
+  await page.getByRole('button', { name: 'Launch Mission: Dual-Signal Decoder' }).click();
+
+  await expect(page.getByText('Match both signals')).toBeVisible();
+  const surface = page.getByLabel('Dual-Signal Decoder game surface');
+  await expect(surface).toBeVisible();
+  await expect(surface).toHaveAttribute('data-options', '3');
+  await expect(surface).toHaveAttribute('data-shield', '100');
+  await expect(surface).toHaveAttribute('data-decoded', '0');
+
+  const targetPair = await surface.getAttribute('data-target-pair');
+  await page.getByRole('button', { name: `Signal pair ${targetPair}` }).click();
+  await expect(surface).toHaveAttribute('data-decoded', '1');
+});
+
 test('dashboard is available for grown-up review', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: /Dashboard/i }).click();
@@ -183,6 +200,15 @@ test('core screens keep clean visual boundaries', async ({ page }) => {
   await expect(page.getByText('Stop the crash codes')).toBeVisible();
   await expectGameSurfaceHasRoom(page, 'Focus Portal game surface', { width: 650, height: 560 });
   await expectAnswerDeckBelowFlightArea(page);
+  await expectCleanViewport(page);
+
+  await page.getByRole('button', { name: 'Star Map' }).click();
+  await page.getByRole('button', { name: 'Launch Mission: Dual-Signal Decoder' }).click();
+  await expect(page.getByText('Match both signals')).toBeVisible();
+  await expectGameSurfaceHasRoom(page, 'Dual-Signal Decoder game surface', {
+    width: 650,
+    height: 560,
+  });
   await expectCleanViewport(page);
 
   await page.getByRole('button', { name: 'Dashboard' }).click();

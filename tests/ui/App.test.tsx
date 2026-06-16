@@ -54,6 +54,18 @@ describe('App', () => {
     expect(screen.getByLabelText('Focus Portal game surface')).toBeInTheDocument();
   });
 
+  it('starts Dual-Signal Decoder after test unlock', async () => {
+    render(<App />);
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Unlock Cards' }));
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Launch Mission: Dual-Signal Decoder' }),
+    );
+
+    expect(await screen.findByText('Match both signals')).toBeInTheDocument();
+    expect(screen.getByLabelText('Dual-Signal Decoder game surface')).toBeInTheDocument();
+  });
+
   it('shows audio briefing and test unlock affordances on the star map', async () => {
     render(<App />);
 

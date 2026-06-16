@@ -83,6 +83,22 @@ function summaryMetrics(result: MissionResult) {
     ];
   }
 
+  if (result.worldId === 'dual-signal') {
+    return [
+      { label: 'Score', value: result.score, color: 'text-comet' },
+      {
+        label: 'Signal Accuracy',
+        value: `${metricNumber(result.metrics.accuracy)}%`,
+        color: 'text-success',
+      },
+      {
+        label: 'Best Combo',
+        value: metricNumber(result.metrics.bestCombo),
+        color: 'text-plasma',
+      },
+    ];
+  }
+
   return [
     { label: 'Score', value: result.score, color: 'text-comet' },
     {
