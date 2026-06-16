@@ -1,6 +1,6 @@
 # Nate-O-Vision Space Academy
 
-Nate-O-Vision Space Academy is a game-first desktop app for Windows/Surface that turns vision-skill practice into short space missions. The first playable world, Orbit Tracker, uses a high-performance Canvas loop and works with touch, Surface Pen, mouse, and trackpad through Pointer Events.
+Nate-O-Vision Space Academy is a game-first desktop app for Windows/Surface that turns vision-skill practice into short space missions. The playable worlds use high-performance Canvas loops and work with touch, Surface Pen, mouse, and trackpad through Pointer Events.
 
 The app is designed as a private family tool. It is not a diagnostic product, a dyslexia treatment, or a replacement for professional eye care.
 
@@ -11,6 +11,7 @@ The app is designed as a private family tool. It is not a diagnostic product, a 
 - Animated mission-card artwork with audio briefings for each game
 - Local persistence through Electron storage with browser fallback for development
 - Orbit Tracker world with touch/pen/mouse beam-lock gameplay, click-to-fire shooting, meteors, alien ships, hull damage, shield energy, and lock-on effects
+- Star Jumper world with fast jump-gate tapping, decoys, lives, combos, reaction timing, and level-scaled difficulty
 - Level progression, stars, rank, cosmetics, unlocks, and mission summaries
 - Grown-up dashboard with progress metrics and JSON export
 - Test Lab unlock control for inspecting mission cards without grinding progression

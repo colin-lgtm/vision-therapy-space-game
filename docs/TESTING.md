@@ -17,6 +17,7 @@ Location: `tests/domain/`
 Current coverage:
 
 - Orbit path math and level configuration.
+- Star Jumper level configuration and scoring.
 - Score, stars, ranks, and level progression.
 
 Run:
@@ -34,6 +35,7 @@ Current coverage:
 - App hydrates and renders the star map.
 - Dashboard navigation works.
 - Orbit Tracker can be launched.
+- Star Jumper can be unlocked and launched.
 
 Run:
 
@@ -48,6 +50,7 @@ Location: `tests/e2e/`
 Current coverage:
 
 - Star map launch flow.
+- Star Jumper unlock and launch flow.
 - Dashboard availability.
 - Desktop and Surface-touch viewports.
 
@@ -77,9 +80,16 @@ Run this on the target Surface before giving the app to a child:
 - Orbit Tracker shows meteors, alien ships, enemy shots, shield feedback, hull damage, and lock-on effects.
 - Orbit Tracker only fires when the player taps or clicks while locked onto the beam.
 - Letting enough meteors or alien shots hit the orbit destroys it and shows the restart choice.
+- Star Jumper animation is smooth.
+- Star Jumper shows one gold target gate, blue decoys, jump effects, lives, and combo feedback.
+- Star Jumper taps on the gold gate advance the round.
+- Star Jumper taps on decoys or missed timeouts remove lives and eventually show the restart choice.
 - Touch drag keeps the beam attached to the finger.
+- Touch taps activate Star Jumper gates without page scrolling.
 - Surface Pen drag works and records as pen input.
+- Surface Pen taps activate Star Jumper gates and record as pen input.
 - Mouse drag works and records as mouse input.
+- Mouse clicks activate Star Jumper gates and record as mouse input.
 - Mission-card speaker buttons play or speak a briefing after a user tap.
 - Mission-card speech uses the most natural installed English voice available on the device.
 - Locked mission cards clearly show the star requirement.

@@ -32,7 +32,7 @@ The renderer never receives direct Node.js access.
   - `main.cjs`: application window, lifecycle, and persistence handlers.
   - `preload.cjs`: safe storage bridge exposed to the renderer.
 - `src/domain/`
-  - Pure TypeScript logic for scoring, levels, orbit math, world definitions, audio helpers, and storage contracts.
+  - Pure TypeScript logic for scoring, levels, orbit math, Star Jumper math, world definitions, audio helpers, and storage contracts.
 - `src/state/`
   - Zustand store and default state.
 - `src/ui/`

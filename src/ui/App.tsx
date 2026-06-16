@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Activity, BarChart3, Rocket, Settings } from 'lucide-react';
 import { OrbitTracker } from './games/OrbitTracker';
+import { StarJumper } from './games/StarJumper';
 import { GrownupDashboard } from './screens/GrownupDashboard';
 import { MissionSummary } from './screens/MissionSummary';
 import { StarMap } from './screens/StarMap';
@@ -9,7 +10,7 @@ import type { MissionResult, WorldId } from '@/domain/types';
 
 type Screen =
   | { name: 'map' }
-  | { name: 'orbit'; worldId: WorldId }
+  | { name: 'mission'; worldId: WorldId }
   | { name: 'summary'; result: MissionResult }
   | { name: 'dashboard' };
 
@@ -90,10 +91,13 @@ export function App() {
 
       <section className="min-h-0 flex-1">
         {screen.name === 'map' && (
-          <StarMap onLaunchOrbit={() => setScreen({ name: 'orbit', worldId: 'orbit-tracker' })} />
+          <StarMap onLaunchWorld={(worldId) => setScreen({ name: 'mission', worldId })} />
         )}
-        {screen.name === 'orbit' && (
+        {screen.name === 'mission' && screen.worldId === 'orbit-tracker' && (
           <OrbitTracker onComplete={completeMission} onExit={() => setScreen({ name: 'map' })} />
+        )}
+        {screen.name === 'mission' && screen.worldId === 'star-jumper' && (
+          <StarJumper onComplete={completeMission} onExit={() => setScreen({ name: 'map' })} />
         )}
         {screen.name === 'summary' && (
           <MissionSummary result={screen.result} onContinue={() => setScreen({ name: 'map' })} />

@@ -22,10 +22,24 @@ describe('App', () => {
   it('starts the orbit tracker mission', async () => {
     render(<App />);
 
-    await userEvent.click(await screen.findByRole('button', { name: /Launch Mission/i }));
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Launch Mission: Orbit Tracker' }),
+    );
 
     expect(await screen.findByText('Keep the beam locked')).toBeInTheDocument();
     expect(screen.getByLabelText('Orbit Tracker game surface')).toBeInTheDocument();
+  });
+
+  it('starts Star Jumper after test unlock', async () => {
+    render(<App />);
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Unlock Cards' }));
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Launch Mission: Star Jumper' }),
+    );
+
+    expect(await screen.findByText('Hit the gold jump gate')).toBeInTheDocument();
+    expect(screen.getByLabelText('Star Jumper game surface')).toBeInTheDocument();
   });
 
   it('shows audio briefing and test unlock affordances on the star map', async () => {

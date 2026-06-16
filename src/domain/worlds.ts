@@ -40,7 +40,7 @@ export const worlds: WorldDefinition[] = [
       'Star Jumper. Watch for jump gates around the screen. Tap the right one fast and ignore space decoys.',
     color: '#ffd166',
     unlockStars: 6,
-    enabledInMvp: false,
+    enabledInMvp: true,
     visualKind: 'gate',
   },
   {

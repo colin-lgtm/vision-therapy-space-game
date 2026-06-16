@@ -15,12 +15,13 @@ import type { CSSProperties } from 'react';
 import { playEffect, speakBriefing } from '@/domain/audio';
 import { worlds, type WorldDefinition } from '@/domain/worlds';
 import { useAcademyStore } from '@/state/useAcademyStore';
+import type { WorldId } from '@/domain/types';
 
 interface StarMapProps {
-  onLaunchOrbit: () => void;
+  onLaunchWorld: (worldId: WorldId) => void;
 }
 
-export function StarMap({ onLaunchOrbit }: StarMapProps) {
+export function StarMap({ onLaunchWorld }: StarMapProps) {
   const profile = useAcademyStore((state) => state.profile);
   const progress = useAcademyStore((state) => state.progress);
   const unlockAllForTesting = useAcademyStore((state) => state.unlockAllForTesting);
@@ -68,7 +69,7 @@ export function StarMap({ onLaunchOrbit }: StarMapProps) {
                   canLaunch={canLaunch}
                   isUnlocked={isUnlocked}
                   key={world.id}
-                  onLaunch={onLaunchOrbit}
+                  onLaunch={() => onLaunchWorld(world.id)}
                   starsNeeded={starsNeeded}
                   totalStars={profile.totalStars}
                   world={world}
@@ -227,6 +228,7 @@ function MissionTile({
           </div>
           <ProgressRail current={totalStars} needed={world.unlockStars} />
           <button
+            aria-label={`Launch Mission: ${world.name}`}
             className={clsx(
               'mt-2 flex min-h-10 w-full items-center justify-center gap-2 rounded-md px-4 py-2 font-black transition',
               canLaunch
