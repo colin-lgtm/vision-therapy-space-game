@@ -15,6 +15,8 @@ export interface FocusPortalScoreInput {
   completedCycles: number;
   crashes: number;
   decoysSeen: number;
+  quickStops: number;
+  quickBonusPoints: number;
   misses: number;
 }
 
@@ -39,6 +41,7 @@ export function calculateFocusPortalScore(input: FocusPortalScoreInput): number 
   const speedScore = Math.max(0, 220 - Math.round(input.averageReactionMs / 18));
   const cycleScore = Math.min(130, input.completedCycles * 16);
   const decoyScore = Math.min(80, input.decoysSeen * 4);
+  const quickReadScore = Math.min(140, input.quickStops * 18 + input.quickBonusPoints);
   const missPenalty = Math.min(160, input.misses * 35);
   const crashPenalty = Math.min(180, input.crashes * 60);
 
@@ -46,7 +49,13 @@ export function calculateFocusPortalScore(input: FocusPortalScoreInput): number 
     0,
     Math.min(
       1000,
-      accuracyScore + speedScore + cycleScore + decoyScore - missPenalty - crashPenalty,
+      accuracyScore +
+        speedScore +
+        cycleScore +
+        decoyScore +
+        quickReadScore -
+        missPenalty -
+        crashPenalty,
     ),
   );
 }

@@ -42,6 +42,8 @@ describe('focus portal', () => {
       completedCycles: 7,
       crashes: 0,
       decoysSeen: 18,
+      quickStops: 5,
+      quickBonusPoints: 74,
       misses: 0,
     });
     const weak = calculateFocusPortalScore({
@@ -50,10 +52,37 @@ describe('focus portal', () => {
       completedCycles: 1,
       crashes: 2,
       decoysSeen: 2,
+      quickStops: 0,
+      quickBonusPoints: 0,
       misses: 4,
     });
 
     expect(strong).toBeGreaterThan(850);
     expect(weak).toBeLessThan(420);
+  });
+
+  it('awards extra score for quick reads before the focus zone', () => {
+    const baseline = calculateFocusPortalScore({
+      accuracy: 1,
+      averageReactionMs: 1600,
+      completedCycles: 5,
+      crashes: 0,
+      decoysSeen: 15,
+      quickStops: 0,
+      quickBonusPoints: 0,
+      misses: 0,
+    });
+    const quick = calculateFocusPortalScore({
+      accuracy: 1,
+      averageReactionMs: 1600,
+      completedCycles: 5,
+      crashes: 0,
+      decoysSeen: 15,
+      quickStops: 4,
+      quickBonusPoints: 56,
+      misses: 0,
+    });
+
+    expect(quick).toBeGreaterThan(baseline);
   });
 });

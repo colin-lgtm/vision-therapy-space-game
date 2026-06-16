@@ -35,6 +35,8 @@ interface FocusPortalStats {
   completedCycles: number;
   crashes: number;
   decoysSeen: number;
+  quickStops: number;
+  quickBonusPoints: number;
 }
 
 interface Decoy {
@@ -61,6 +63,8 @@ const emptyStats: FocusPortalStats = {
   completedCycles: 0,
   crashes: 0,
   decoysSeen: 0,
+  quickStops: 0,
+  quickBonusPoints: 0,
 };
 
 function inputKindFromPointer(pointerType: string): InputKind {
@@ -84,6 +88,8 @@ function focusPortalScoreInput(stats: FocusPortalStats) {
     completedCycles: stats.completedCycles,
     crashes: stats.crashes,
     decoysSeen: stats.decoysSeen,
+    quickStops: stats.quickStops,
+    quickBonusPoints: stats.quickBonusPoints,
     misses: stats.misses,
   };
 }
@@ -113,6 +119,7 @@ export function FocusPortal({ onComplete, onExit }: FocusPortalProps) {
   const [targetDepth, setTargetDepth] = useState(0);
   const [targetScale, setTargetScale] = useState(0);
   const [hits, setHits] = useState(0);
+  const [quickStops, setQuickStops] = useState(0);
   const [hull, setHull] = useState(4);
   const [liveScore, setLiveScore] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
@@ -149,6 +156,8 @@ export function FocusPortal({ onComplete, onExit }: FocusPortalProps) {
           completedCycles: stats.completedCycles,
           crashes: stats.crashes,
           decoysSeen: stats.decoysSeen,
+          quickStops: stats.quickStops,
+          quickBonusPoints: stats.quickBonusPoints,
           attempts: stats.attempts,
           misses: stats.misses,
           hull,
@@ -218,6 +227,7 @@ export function FocusPortal({ onComplete, onExit }: FocusPortalProps) {
     setTargetDepth(0);
     setTargetScale(0);
     setHits(0);
+    setQuickStops(0);
     setHull(4);
     setLiveScore(0);
     setIsPaused(false);
@@ -241,18 +251,25 @@ export function FocusPortal({ onComplete, onExit }: FocusPortalProps) {
       inputKindRef.current = inputKindFromPointer(pointerType);
       const now = performance.now();
       const isCorrect = glyph === round.target;
-      const isTimed =
-        targetDepthRef.current >= config.focusStart && targetDepthRef.current <= config.focusEnd;
+      const currentDepth = targetDepthRef.current;
+      const isEarlyBonus = currentDepth < config.focusStart;
+      const isBeforeImpact = currentDepth <= config.focusEnd;
       statsRef.current.attempts += 1;
 
-      if (isCorrect && isTimed) {
+      if (isCorrect && isBeforeImpact) {
+        const earlyBonusPoints = isEarlyBonus
+          ? Math.round((1 - currentDepth / config.focusStart) * 24)
+          : 0;
         statsRef.current.hits += 1;
         statsRef.current.completedCycles += 1;
         statsRef.current.decoysSeen += config.decoyCount;
+        statsRef.current.quickStops += isEarlyBonus ? 1 : 0;
+        statsRef.current.quickBonusPoints += earlyBonusPoints;
         statsRef.current.totalReactionMs += Math.max(0, now - round.startedAt);
         setHits(statsRef.current.hits);
+        setQuickStops(statsRef.current.quickStops);
         setLiveScore(calculateFocusPortalScore(focusPortalScoreInput(statsRef.current)));
-        playEffect('lock');
+        playEffect(isEarlyBonus ? 'complete' : 'lock');
         startNextRound(now);
         return;
       }
@@ -383,7 +400,7 @@ export function FocusPortal({ onComplete, onExit }: FocusPortalProps) {
   const roundedTime = Math.ceil(remainingSeconds);
   const accuracy = Math.round(focusPortalAccuracy(statsRef.current) * 100);
   const targetDepthPercent = Math.round(targetDepth * 100);
-  const focusStatus = targetInFocus ? 'LOCK' : targetDepth < config.focusStart ? 'WAIT' : 'LATE';
+  const focusStatus = targetInFocus ? 'LOCK' : targetDepth < config.focusStart ? 'BONUS' : 'LATE';
 
   return (
     <div className="flex h-full flex-col p-5">
@@ -396,6 +413,7 @@ export function FocusPortal({ onComplete, onExit }: FocusPortalProps) {
           <HudStat label="Level" tone="text-success" value={level.toString()} />
           <HudStat label="Score" tone="text-comet" value={liveScore.toString()} />
           <HudStat label="Stops" tone="text-plasma" value={hits.toString()} />
+          <HudStat label="Quick" tone="text-success" value={quickStops.toString()} />
           <HudStat label="Hull" tone="text-nebula" value={hull.toString()} />
           <HudStat label="Fuel" tone="text-comet" value={`${roundedTime}s`} />
           <button
@@ -433,7 +451,7 @@ export function FocusPortal({ onComplete, onExit }: FocusPortalProps) {
               <p className="text-xs font-black uppercase text-success">Ship Task</p>
               <h2 className="mt-1 text-2xl font-black">Tap the matching code</h2>
               <p className="mt-2 text-sm font-bold leading-6 text-white/70">
-                Wait for the incoming code to hit the green focus zone.
+                Tap early for bonus, or hit the green zone for a solid stop.
               </p>
             </div>
 
@@ -445,7 +463,7 @@ export function FocusPortal({ onComplete, onExit }: FocusPortalProps) {
                   <PanelStat
                     label="Timing"
                     value={focusStatus}
-                    tone={targetInFocus ? 'text-success' : 'text-white'}
+                    tone={targetDepth <= config.focusEnd ? 'text-success' : 'text-white'}
                   />
                   <PanelStat label="Accuracy" value={`${accuracy}%`} />
                   <PanelStat label="Decoys" value={config.decoyCount.toString()} />
@@ -484,8 +502,10 @@ export function FocusPortal({ onComplete, onExit }: FocusPortalProps) {
             data-focus-end={config.focusEnd}
             data-focus-start={config.focusStart}
             data-hull={hull}
+            data-quick-stops={quickStops}
             data-options={config.options}
             data-phase="incoming"
+            data-stops={hits}
             data-target-code={round.target}
             data-target-depth={targetDepth.toFixed(3)}
             data-target-in-focus={targetInFocus}

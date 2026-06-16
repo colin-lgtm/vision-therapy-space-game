@@ -123,6 +123,8 @@ test('test lab unlocks and launches Focus Portal', async ({ page }) => {
   await expect(surface).toHaveAttribute('data-options', '3');
   await expect(surface).toHaveAttribute('data-decoys', '3');
   await expect(surface).toHaveAttribute('data-hull', '4');
+  await expect(surface).toHaveAttribute('data-stops', '0');
+  await expect(surface).toHaveAttribute('data-quick-stops', '0');
   await expectAnswerDeckBelowFlightArea(page);
 
   const initialScale = Number(await surface.getAttribute('data-target-scale'));
@@ -131,12 +133,18 @@ test('test lab unlocks and launches Focus Portal', async ({ page }) => {
     .toBeGreaterThan(initialScale + 1);
 
   const targetCode = await surface.getAttribute('data-target-code');
+  await page.getByRole('button', { name: `Code ${targetCode}` }).click();
+  await expect(surface).toHaveAttribute('data-hull', '4');
+  await expect(surface).toHaveAttribute('data-stops', '1');
+  await expect(surface).toHaveAttribute('data-quick-stops', '1');
+
+  const nextTargetCode = await surface.getAttribute('data-target-code');
   const wrongCode = await surface
     .locator('[data-answer-deck="true"] button')
     .evaluateAll(
       (buttons, target) =>
         buttons.map((button) => button.textContent?.trim() ?? '').find((code) => code !== target),
-      targetCode,
+      nextTargetCode,
     );
   expect(wrongCode).toBeTruthy();
   await page.getByRole('button', { name: `Code ${wrongCode}` }).click();
