@@ -2,7 +2,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Home, Pause, Play, Shield, X } from 'lucide-react';
 import { playEffect } from '@/domain/audio';
 import { calculateOrbitScore } from '@/domain/progression';
-import { distance, orbitConfigForLevel, targetPosition, type Point } from '@/domain/orbit';
+import {
+  distance,
+  orbitConfigForLevel,
+  orbitWobbleForLevel,
+  targetPosition,
+  type Point,
+} from '@/domain/orbit';
 import { useAcademyStore } from '@/state/useAcademyStore';
 import type { InputKind, MissionResult } from '@/domain/types';
 
@@ -92,6 +98,7 @@ export function OrbitTracker({ onComplete, onExit }: OrbitTrackerProps) {
   const completedRef = useRef(false);
   const rafRef = useRef<number | null>(null);
   const startRef = useRef<number | null>(null);
+  const motionSeedRef = useRef(Math.random() * 1000);
   const pauseStartedRef = useRef<number | null>(null);
   const pausedMsRef = useRef(0);
   const activeSecondsRef = useRef(0);
@@ -167,6 +174,7 @@ export function OrbitTracker({ onComplete, onExit }: OrbitTrackerProps) {
     statsRef.current = { ...emptyStats };
     completedRef.current = false;
     startRef.current = null;
+    motionSeedRef.current = Math.random() * 1000;
     pauseStartedRef.current = null;
     pausedMsRef.current = 0;
     activeSecondsRef.current = 0;
@@ -428,11 +436,20 @@ export function OrbitTracker({ onComplete, onExit }: OrbitTrackerProps) {
       context.fillRect(0, 0, width, height);
       drawStars(width, height);
 
-      const target = targetPosition(config.path, elapsedSeconds, {
-        width,
-        height,
-        padding: Math.max(90, config.targetRadius + 28),
-      });
+      const motionOptions = {
+        seed: motionSeedRef.current,
+        wobble: orbitWobbleForLevel(level),
+      };
+      const target = targetPosition(
+        config.path,
+        elapsedSeconds,
+        {
+          width,
+          height,
+          padding: Math.max(90, config.targetRadius + 28),
+        },
+        motionOptions,
+      );
 
       const pointer = pointerRef.current;
       const pointerDistance = pointer ? distance(pointer, target) : config.targetRadius + 200;
@@ -535,11 +552,16 @@ export function OrbitTracker({ onComplete, onExit }: OrbitTrackerProps) {
       context.lineWidth = 2;
       context.beginPath();
       for (let i = 0; i < 240; i += 1) {
-        const point = targetPosition(config.path, elapsedSeconds - i * 0.015, {
-          width,
-          height,
-          padding: Math.max(90, config.targetRadius + 28),
-        });
+        const point = targetPosition(
+          config.path,
+          elapsedSeconds - i * 0.015,
+          {
+            width,
+            height,
+            padding: Math.max(90, config.targetRadius + 28),
+          },
+          motionOptions,
+        );
         if (i === 0) context.moveTo(point.x, point.y);
         else context.lineTo(point.x, point.y);
       }

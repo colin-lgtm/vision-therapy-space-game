@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { distance, orbitConfigForLevel, targetPosition } from '@/domain/orbit';
+import { distance, orbitConfigForLevel, orbitWobbleForLevel, targetPosition } from '@/domain/orbit';
 
 describe('orbit math', () => {
   it('keeps level configuration within playable bounds', () => {
@@ -16,6 +16,30 @@ describe('orbit math', () => {
     expect(orbitConfigForLevel(3).path).toBe('figure-eight');
     expect(orbitConfigForLevel(5).path).toBe('swoop');
     expect(orbitConfigForLevel(9).path).toBe('lissajous');
+  });
+
+  it('keeps the first path organic instead of a perfect circle', () => {
+    const bounds = { width: 1000, height: 700, padding: 100 };
+    const center = { x: bounds.width / 2, y: bounds.height / 2 };
+    const samples = [0, 1, 2, 3, 4].map((time) => targetPosition('circle', time, bounds));
+    const radii = samples.map((point) => Math.round(distance(point, center)));
+    const uniqueRadii = new Set(radii);
+
+    expect(uniqueRadii.size).toBeGreaterThan(2);
+  });
+
+  it('uses run seed and level wobble to vary the same path', () => {
+    const bounds = { width: 1000, height: 700, padding: 100 };
+    const first = targetPosition('circle', 2.4, bounds, {
+      seed: 1,
+      wobble: orbitWobbleForLevel(1),
+    });
+    const second = targetPosition('circle', 2.4, bounds, {
+      seed: 44,
+      wobble: orbitWobbleForLevel(1),
+    });
+
+    expect(Math.round(distance(first, second))).toBeGreaterThan(20);
   });
 
   it('generates target positions inside padded canvas bounds', () => {
