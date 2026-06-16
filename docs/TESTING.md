@@ -81,8 +81,8 @@ Run this on the target Surface before giving the app to a child:
 - Orbit Tracker only fires when the player taps or clicks while locked onto the beam.
 - Letting enough meteors or alien shots hit the orbit destroys it and shows the restart choice.
 - Star Jumper animation is smooth.
-- Star Jumper shows one gold target gate, blue decoys, jump effects, lives, and combo feedback.
-- Star Jumper taps on the gold gate advance the round.
+- Star Jumper shows the ship parked on a green/yellow origin star, one red destination gate, blue decoys, jump effects, lives, and combo feedback.
+- Star Jumper taps on the red destination gate advance the round and move the ship there.
 - Star Jumper taps on decoys or missed timeouts remove lives and eventually show the restart choice.
 - Touch drag keeps the beam attached to the finger.
 - Touch taps activate Star Jumper gates without page scrolling.

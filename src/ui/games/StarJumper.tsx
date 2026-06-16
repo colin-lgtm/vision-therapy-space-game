@@ -16,7 +16,7 @@ interface Gate {
   x: number;
   y: number;
   radius: number;
-  target: boolean;
+  kind: 'origin' | 'target' | 'decoy';
   phase: number;
 }
 
@@ -184,28 +184,49 @@ export function StarJumper({ onComplete, onExit }: StarJumperProps) {
   }, [config.durationSeconds]);
 
   const spawnRound = useCallback(
-    (width: number, height: number, now: number) => {
+    (width: number, height: number, now: number, origin?: Point) => {
       const padding = Math.max(76, config.targetRadius + 22);
+      const currentStar = origin ??
+        shipRef.current ?? {
+          x: randomBetween(padding, width - padding),
+          y: randomBetween(padding + 10, height - padding),
+        };
+      const originGate: Gate = {
+        id: gateIdRef.current,
+        x: currentStar.x,
+        y: currentStar.y,
+        radius: config.targetRadius * 0.9,
+        kind: 'origin',
+        phase: Math.random() * Math.PI * 2,
+      };
+      gateIdRef.current += 1;
+      shipRef.current = currentStar;
+
       const target: Gate = {
         id: gateIdRef.current,
         x: randomBetween(padding, width - padding),
         y: randomBetween(padding + 10, height - padding),
         radius: config.targetRadius,
-        target: true,
+        kind: 'target',
         phase: Math.random() * Math.PI * 2,
       };
       gateIdRef.current += 1;
 
-      const gates = [target];
+      while (distance(originGate, target) < config.targetRadius * 3.3) {
+        target.x = randomBetween(padding, width - padding);
+        target.y = randomBetween(padding + 10, height - padding);
+      }
+
+      const gates = [originGate, target];
       let guard = 0;
-      while (gates.length < config.decoys + 1 && guard < 80) {
+      while (gates.length < config.decoys + 2 && guard < 80) {
         guard += 1;
         const candidate: Gate = {
           id: gateIdRef.current,
           x: randomBetween(padding, width - padding),
           y: randomBetween(padding + 10, height - padding),
           radius: config.targetRadius * randomBetween(0.78, 0.95),
-          target: false,
+          kind: 'decoy',
           phase: Math.random() * Math.PI * 2,
         };
         if (gates.every((gate) => distance(gate, candidate) > config.targetRadius * 2.5)) {
@@ -239,25 +260,27 @@ export function StarJumper({ onComplete, onExit }: StarJumperProps) {
       if (gameOver || isPaused) return;
       const hitGate = gatesRef.current.find((gate) => distance(point, gate) <= gate.radius);
       if (!hitGate) return;
+      if (hitGate.kind === 'origin') return;
 
       statsRef.current.attempts += 1;
       sparksRef.current.push({
         x: hitGate.x,
         y: hitGate.y,
         life: 1,
-        color: hitGate.target ? '#ffd166' : '#ff6b9d',
+        color: hitGate.kind === 'target' ? '#ff6b9d' : '#6cf0ff',
       });
 
-      if (hitGate.target) {
+      if (hitGate.kind === 'target') {
         const reactionMs = Math.max(0, performance.now() - gateBornAtRef.current);
         const from = shipRef.current ?? { x: hitGate.x, y: hitGate.y };
+        const destination = { x: hitGate.x, y: hitGate.y };
         jumpTrailRef.current = {
           from,
-          to: { x: hitGate.x, y: hitGate.y },
+          to: destination,
           startedAt: performance.now(),
           durationMs: 360,
         };
-        shipRef.current = { x: hitGate.x, y: hitGate.y };
+        shipRef.current = destination;
         statsRef.current.hits += 1;
         statsRef.current.totalReactionMs += reactionMs;
         setHits(statsRef.current.hits);
@@ -270,7 +293,7 @@ export function StarJumper({ onComplete, onExit }: StarJumperProps) {
         playEffect('launch');
 
         const rect = canvasRef.current?.getBoundingClientRect();
-        if (rect) spawnRound(rect.width, rect.height, performance.now());
+        if (rect) spawnRound(rect.width, rect.height, performance.now(), destination);
         return;
       }
 
@@ -278,7 +301,8 @@ export function StarJumper({ onComplete, onExit }: StarJumperProps) {
       setLiveScore(calculateStarJumperScore(starJumperScoreInput(statsRef.current)));
       damage();
       const rect = canvasRef.current?.getBoundingClientRect();
-      if (rect) spawnRound(rect.width, rect.height, performance.now());
+      if (rect)
+        spawnRound(rect.width, rect.height, performance.now(), shipRef.current ?? undefined);
     },
     [damage, gameOver, isPaused, spawnRound],
   );
@@ -340,7 +364,7 @@ export function StarJumper({ onComplete, onExit }: StarJumperProps) {
 
       if (!ship) return;
 
-      const target = gatesRef.current.find((gate) => gate.target);
+      const target = gatesRef.current.find((gate) => gate.kind === 'target');
       const angle = target ? Math.atan2(target.y - ship.y, target.x - ship.x) : 0;
       context.save();
       context.translate(ship.x, ship.y);
@@ -368,18 +392,20 @@ export function StarJumper({ onComplete, onExit }: StarJumperProps) {
     const drawGate = (gate: Gate, now: number, progress: number) => {
       const pulse = Math.sin(now / 160 + gate.phase) * 4;
       const radius = gate.radius + pulse;
+      const isOrigin = gate.kind === 'origin';
+      const isTarget = gate.kind === 'target';
       context.save();
       context.translate(gate.x, gate.y);
-      context.rotate(now / (gate.target ? 620 : -760) + gate.phase);
-      context.globalAlpha = gate.target ? 1 : 0.72;
-      context.strokeStyle = gate.target ? '#ffd166' : '#6cf0ff';
-      context.lineWidth = gate.target ? 7 : 4;
-      context.shadowColor = gate.target ? '#ffd166' : '#6cf0ff';
-      context.shadowBlur = gate.target ? 24 : 12;
+      context.rotate(now / (isTarget ? 620 : -760) + gate.phase);
+      context.globalAlpha = isOrigin ? 0.94 : isTarget ? 1 : 0.62;
+      context.strokeStyle = isOrigin ? '#7dff9b' : isTarget ? '#ff6b9d' : '#6cf0ff';
+      context.lineWidth = isTarget ? 7 : isOrigin ? 6 : 4;
+      context.shadowColor = isOrigin ? '#7dff9b' : isTarget ? '#ff6b9d' : '#6cf0ff';
+      context.shadowBlur = isTarget || isOrigin ? 24 : 12;
       context.beginPath();
       context.arc(0, 0, radius, 0, Math.PI * 2);
       context.stroke();
-      context.strokeStyle = gate.target ? '#ffffff' : '#ff6b9d';
+      context.strokeStyle = isOrigin ? '#ffd166' : isTarget ? '#ffffff' : '#ff6b9d';
       context.lineWidth = 3;
       for (let i = 0; i < 6; i += 1) {
         const angle = (Math.PI * 2 * i) / 6;
@@ -390,9 +416,9 @@ export function StarJumper({ onComplete, onExit }: StarJumperProps) {
       }
       context.restore();
 
-      if (gate.target) {
+      if (isTarget) {
         context.save();
-        context.strokeStyle = progress > 0.28 ? '#7dff9b' : '#ff6b9d';
+        context.strokeStyle = progress > 0.28 ? '#ff6b9d' : '#ffd166';
         context.lineWidth = 5;
         context.beginPath();
         context.arc(
@@ -426,7 +452,6 @@ export function StarJumper({ onComplete, onExit }: StarJumperProps) {
       const width = rect.width;
       const height = rect.height;
       if (gatesRef.current.length === 0) spawnRound(width, height, now);
-      if (!shipRef.current) shipRef.current = { x: width / 2, y: height / 2 };
 
       const activeSeconds = (now - startRef.current - pausedMsRef.current) / 1000;
       activeSecondsRef.current = activeSeconds;
@@ -438,7 +463,7 @@ export function StarJumper({ onComplete, onExit }: StarJumperProps) {
         statsRef.current.timeouts += 1;
         setLiveScore(calculateStarJumperScore(starJumperScoreInput(statsRef.current)));
         damage();
-        spawnRound(width, height, now);
+        spawnRound(width, height, now, shipRef.current ?? undefined);
       }
 
       context.clearRect(0, 0, width, height);
@@ -474,9 +499,9 @@ export function StarJumper({ onComplete, onExit }: StarJumperProps) {
       context.fillStyle = '#ffffff';
       context.font = '900 15px Verdana';
       context.textAlign = 'left';
-      context.fillText('TAP THE GOLD JUMP GATE', 34, 44);
+      context.fillText('TAP THE RED JUMP GATE', 34, 44);
       context.fillStyle = '#ff6b9d';
-      context.fillText('AVOID DECOYS', 34, 66);
+      context.fillText('START FROM GREEN', 34, 66);
       context.restore();
 
       if (remaining <= 0) {
@@ -513,7 +538,7 @@ export function StarJumper({ onComplete, onExit }: StarJumperProps) {
       <div className="mb-4 flex shrink-0 items-center justify-between gap-4">
         <div>
           <p className="text-sm font-bold uppercase text-comet">Star Jumper</p>
-          <h1 className="text-3xl font-black">Hit the gold jump gate</h1>
+          <h1 className="text-3xl font-black">Jump to the red gate</h1>
         </div>
         <div className="flex items-center gap-3">
           <div className="rounded-lg border border-white/10 bg-white/7 px-4 py-2 text-center">
@@ -599,7 +624,8 @@ export function StarJumper({ onComplete, onExit }: StarJumperProps) {
               <p className="text-sm font-black uppercase text-nebula">Ship Lost</p>
               <h2 className="mt-2 text-4xl font-black">Try the jumps again</h2>
               <p className="mt-3 leading-6 text-white/70">
-                Tap the gold gate before it closes. Blue decoy gates knock the ship off course.
+                The ship starts on the green star. Tap the red gate before it closes and avoid blue
+                decoys.
               </p>
               <div className="mt-6 flex justify-center gap-3">
                 <button

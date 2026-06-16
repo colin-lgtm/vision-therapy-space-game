@@ -1,5 +1,10 @@
 import '@testing-library/jest-dom/vitest';
-import { vi } from 'vitest';
+import { cleanup } from '@testing-library/react';
+import { afterEach, vi } from 'vitest';
+
+afterEach(() => {
+  cleanup();
+});
 
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
@@ -13,6 +18,16 @@ Object.defineProperty(window, 'matchMedia', {
     removeEventListener: () => undefined,
     dispatchEvent: () => false,
   }),
+});
+
+Object.defineProperty(window, 'requestAnimationFrame', {
+  writable: true,
+  value: vi.fn(() => 0),
+});
+
+Object.defineProperty(window, 'cancelAnimationFrame', {
+  writable: true,
+  value: vi.fn(),
 });
 
 const canvasContext = {

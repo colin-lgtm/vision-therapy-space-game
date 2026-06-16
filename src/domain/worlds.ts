@@ -34,10 +34,10 @@ export const worlds: WorldDefinition[] = [
     name: 'Star Jumper',
     shortName: 'Jumper',
     diagnosisTarget: 'Saccades, localization, and visual-motor response',
-    gameGoal: 'Tap jump gates before they disappear.',
-    playerAction: 'Quickly tap the right gate, then jump to the next one.',
+    gameGoal: 'Jump the ship from the green star to the red gate.',
+    playerAction: 'Tap the red destination before it closes, and avoid blue decoys.',
     briefing:
-      'Star Jumper. Watch for jump gates around the screen. Tap the right one fast and ignore space decoys.',
+      'Star Jumper. The ship starts on the green star. Tap the red destination gate fast and ignore blue space decoys.',
     color: '#ffd166',
     unlockStars: 6,
     enabledInMvp: true,

@@ -15,7 +15,7 @@ test('test lab unlocks and launches Star Jumper', async ({ page }) => {
   await page.getByRole('button', { name: 'Unlock Cards' }).click();
   await page.getByRole('button', { name: 'Launch Mission: Star Jumper' }).click();
 
-  await expect(page.getByText('Hit the gold jump gate')).toBeVisible();
+  await expect(page.getByText('Jump to the red gate')).toBeVisible();
   await expect(page.getByLabel('Star Jumper game surface')).toBeVisible();
 });
 

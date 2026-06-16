@@ -38,7 +38,7 @@ describe('App', () => {
       await screen.findByRole('button', { name: 'Launch Mission: Star Jumper' }),
     );
 
-    expect(await screen.findByText('Hit the gold jump gate')).toBeInTheDocument();
+    expect(await screen.findByText('Jump to the red gate')).toBeInTheDocument();
     expect(screen.getByLabelText('Star Jumper game surface')).toBeInTheDocument();
   });
 
