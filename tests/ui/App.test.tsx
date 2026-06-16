@@ -50,7 +50,7 @@ describe('App', () => {
       await screen.findByRole('button', { name: 'Launch Mission: Focus Portal' }),
     );
 
-    expect(await screen.findByText('Power the portal runes')).toBeInTheDocument();
+    expect(await screen.findByText('Dive the depth portal')).toBeInTheDocument();
     expect(screen.getByLabelText('Focus Portal game surface')).toBeInTheDocument();
   });
 

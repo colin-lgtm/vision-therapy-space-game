@@ -2,7 +2,9 @@ export interface FocusPortalConfig {
   level: number;
   durationSeconds: number;
   options: number;
-  farFocusMs: number;
+  depthChargeMs: number;
+  depthBeacons: number;
+  beaconBonusMs: number;
   scanMs: number;
   glyphScale: number;
 }
@@ -11,7 +13,8 @@ export interface FocusPortalScoreInput {
   accuracy: number;
   averageReactionMs: number;
   completedCycles: number;
-  farFocusSeconds: number;
+  depthChargeSeconds: number;
+  beaconHits: number;
   misses: number;
 }
 
@@ -23,7 +26,9 @@ export function focusPortalConfigForLevel(level: number): FocusPortalConfig {
     level: clamped,
     durationSeconds: 50 + Math.min(35, Math.floor(clamped / 4) * 5),
     options: Math.min(6, 3 + Math.floor((clamped - 1) / 6)),
-    farFocusMs: Math.max(1500, 3000 - clamped * 55),
+    depthChargeMs: Math.max(1500, 3000 - clamped * 55),
+    depthBeacons: Math.min(4, 2 + Math.floor((clamped - 1) / 8)),
+    beaconBonusMs: Math.max(280, 520 - clamped * 8),
     scanMs: Math.max(1400, 2600 - clamped * 35),
     glyphScale: Math.max(0.58, 1 - clamped * 0.012),
   };
@@ -33,12 +38,12 @@ export function calculateFocusPortalScore(input: FocusPortalScoreInput): number 
   const accuracyScore = Math.round(input.accuracy * 620);
   const speedScore = Math.max(0, 220 - Math.round(input.averageReactionMs / 18));
   const cycleScore = Math.min(130, input.completedCycles * 16);
-  const farFocusScore = Math.min(80, Math.round(input.farFocusSeconds * 3));
+  const depthScore = Math.min(80, Math.round(input.depthChargeSeconds * 3 + input.beaconHits * 5));
   const missPenalty = Math.min(160, input.misses * 35);
 
   return Math.max(
     0,
-    Math.min(1000, accuracyScore + speedScore + cycleScore + farFocusScore - missPenalty),
+    Math.min(1000, accuracyScore + speedScore + cycleScore + depthScore - missPenalty),
   );
 }
 

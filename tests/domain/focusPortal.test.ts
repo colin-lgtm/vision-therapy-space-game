@@ -14,13 +14,14 @@ function seededRandom(seed: number) {
 }
 
 describe('focus portal', () => {
-  it('scales option count and focus timing by level', () => {
+  it('scales option count and depth timing by level', () => {
     const levelOne = focusPortalConfigForLevel(1);
     const advanced = focusPortalConfigForLevel(18);
 
     expect(levelOne.options).toBe(3);
     expect(advanced.options).toBeGreaterThan(levelOne.options);
-    expect(advanced.farFocusMs).toBeLessThan(levelOne.farFocusMs);
+    expect(advanced.depthChargeMs).toBeLessThan(levelOne.depthChargeMs);
+    expect(advanced.depthBeacons).toBeGreaterThan(levelOne.depthBeacons);
     expect(advanced.glyphScale).toBeLessThan(levelOne.glyphScale);
   });
 
@@ -37,14 +38,16 @@ describe('focus portal', () => {
       accuracy: 1,
       averageReactionMs: 900,
       completedCycles: 7,
-      farFocusSeconds: 18,
+      depthChargeSeconds: 18,
+      beaconHits: 8,
       misses: 0,
     });
     const weak = calculateFocusPortalScore({
       accuracy: 0.25,
       averageReactionMs: 4200,
       completedCycles: 1,
-      farFocusSeconds: 3,
+      depthChargeSeconds: 3,
+      beaconHits: 0,
       misses: 4,
     });
 

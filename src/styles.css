@@ -172,7 +172,7 @@ button {
 .art-ship,
 .art-portal,
 .art-rune,
-.art-wall-target,
+.art-depth-beacon,
 .art-decoder,
 .art-shield,
 .art-spark {
@@ -331,7 +331,7 @@ button {
   transform: rotate(10deg);
 }
 
-.art-wall-target {
+.art-depth-beacon {
   right: 34px;
   bottom: 30px;
   height: 56px;

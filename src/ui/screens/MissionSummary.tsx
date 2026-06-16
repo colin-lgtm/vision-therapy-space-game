@@ -76,8 +76,8 @@ function summaryMetrics(result: MissionResult) {
         color: 'text-success',
       },
       {
-        label: 'Cycles',
-        value: metricNumber(result.metrics.completedCycles),
+        label: 'Beacons',
+        value: metricNumber(result.metrics.beaconHits),
         color: 'text-plasma',
       },
     ];

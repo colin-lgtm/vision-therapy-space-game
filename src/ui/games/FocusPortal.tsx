@@ -16,7 +16,7 @@ interface FocusPortalProps {
   onExit: () => void;
 }
 
-type PortalPhase = 'scan' | 'far' | 'choose';
+type PortalPhase = 'scan' | 'depth' | 'choose';
 
 interface PortalRound {
   target: string;
@@ -31,7 +31,8 @@ interface FocusPortalStats {
   misses: number;
   totalReactionMs: number;
   completedCycles: number;
-  farFocusMs: number;
+  depthChargeMs: number;
+  beaconHits: number;
 }
 
 const emptyStats: FocusPortalStats = {
@@ -40,8 +41,17 @@ const emptyStats: FocusPortalStats = {
   misses: 0,
   totalReactionMs: 0,
   completedCycles: 0,
-  farFocusMs: 0,
+  depthChargeMs: 0,
+  beaconHits: 0,
 };
+
+interface DepthBeacon {
+  id: number;
+  xPercent: number;
+  yPercent: number;
+  size: number;
+  hit: boolean;
+}
 
 function inputKindFromPointer(pointerType: string): InputKind {
   if (pointerType === 'touch' || pointerType === 'pen' || pointerType === 'mouse')
@@ -62,7 +72,8 @@ function focusPortalScoreInput(stats: FocusPortalStats) {
     accuracy: focusPortalAccuracy(stats),
     averageReactionMs: focusPortalAverageReaction(stats),
     completedCycles: stats.completedCycles,
-    farFocusSeconds: Math.round(stats.farFocusMs / 1000),
+    depthChargeSeconds: Math.round(stats.depthChargeMs / 1000),
+    beaconHits: stats.beaconHits,
     misses: stats.misses,
   };
 }
@@ -81,11 +92,15 @@ export function FocusPortal({ onComplete, onExit }: FocusPortalProps) {
   const pausedStartedRef = useRef<number | null>(null);
   const pausedMsRef = useRef(0);
   const roundIdRef = useRef(0);
+  const depthBoostMsRef = useRef(0);
 
   const [phase, setPhase] = useState<PortalPhase>('scan');
   const [round, setRound] = useState<PortalRound>(() => makeRound(config.options));
   const [remainingSeconds, setRemainingSeconds] = useState(config.durationSeconds);
   const [portalCharge, setPortalCharge] = useState(0);
+  const [depthBeacons, setDepthBeacons] = useState<DepthBeacon[]>(() =>
+    makeDepthBeacons(config.depthBeacons),
+  );
   const [cycles, setCycles] = useState(0);
   const [hits, setHits] = useState(0);
   const [lives, setLives] = useState(3);
@@ -119,17 +134,27 @@ export function FocusPortal({ onComplete, onExit }: FocusPortalProps) {
           accuracy: Math.round(focusPortalAccuracy(stats) * 100),
           averageReactionMs: Math.round(focusPortalAverageReaction(stats)),
           completedCycles: stats.completedCycles,
-          farFocusSeconds: Math.round(stats.farFocusMs / 1000),
+          depthChargeSeconds: Math.round(stats.depthChargeMs / 1000),
+          beaconHits: stats.beaconHits,
           attempts: stats.attempts,
           misses: stats.misses,
           lives,
           options: config.options,
-          farFocusMs: config.farFocusMs,
+          depthChargeMs: config.depthChargeMs,
+          depthBeacons: config.depthBeacons,
           scanMs: config.scanMs,
         },
       });
     },
-    [config.farFocusMs, config.options, config.scanMs, level, lives, onComplete],
+    [
+      config.depthBeacons,
+      config.depthChargeMs,
+      config.options,
+      config.scanMs,
+      level,
+      lives,
+      onComplete,
+    ],
   );
 
   const resetRun = useCallback(() => {
@@ -142,8 +167,10 @@ export function FocusPortal({ onComplete, onExit }: FocusPortalProps) {
     pausedStartedRef.current = null;
     pausedMsRef.current = 0;
     roundIdRef.current = 0;
+    depthBoostMsRef.current = 0;
     setPhase('scan');
     setRound(makeRound(config.options));
+    setDepthBeacons(makeDepthBeacons(config.depthBeacons));
     setRemainingSeconds(config.durationSeconds);
     setPortalCharge(0);
     setCycles(0);
@@ -153,16 +180,18 @@ export function FocusPortal({ onComplete, onExit }: FocusPortalProps) {
     setIsPaused(false);
     setGameOver(false);
     setRestartNonce((value) => value + 1);
-  }, [config.durationSeconds, config.options]);
+  }, [config.depthBeacons, config.durationSeconds, config.options]);
 
   const startNextRound = useCallback(
     (now: number) => {
       roundIdRef.current += 1;
+      depthBoostMsRef.current = 0;
       setPhase('scan');
       setPortalCharge(0);
       setRound(makeRound(config.options, roundIdRef.current, now));
+      setDepthBeacons(makeDepthBeacons(config.depthBeacons, roundIdRef.current));
     },
-    [config.options],
+    [config.depthBeacons, config.options],
   );
 
   const damagePortal = useCallback(() => {
@@ -179,17 +208,36 @@ export function FocusPortal({ onComplete, onExit }: FocusPortalProps) {
     });
   }, []);
 
-  const openFarPortal = useCallback(
+  const divePortal = useCallback(
     (pointerType: string) => {
       if (phase !== 'scan' || gameOver || isPaused) return;
       inputKindRef.current = inputKindFromPointer(pointerType);
       const now = performance.now();
-      setPhase('far');
+      depthBoostMsRef.current = 0;
+      setPhase('depth');
       setPortalCharge(0);
       setRound((value) => ({ ...value, phaseStartedAt: now }));
+      setDepthBeacons(makeDepthBeacons(config.depthBeacons, roundIdRef.current));
       playEffect('launch');
     },
-    [gameOver, isPaused, phase],
+    [config.depthBeacons, gameOver, isPaused, phase],
+  );
+
+  const hitDepthBeacon = useCallback(
+    (id: number, pointerType: string) => {
+      if (phase !== 'depth' || gameOver || isPaused) return;
+      inputKindRef.current = inputKindFromPointer(pointerType);
+      setDepthBeacons((beacons) =>
+        beacons.map((beacon) => {
+          if (beacon.id !== id || beacon.hit) return beacon;
+          depthBoostMsRef.current += config.beaconBonusMs;
+          statsRef.current.beaconHits += 1;
+          playEffect('lock');
+          return { ...beacon, hit: true };
+        }),
+      );
+    },
+    [config.beaconBonusMs, gameOver, isPaused, phase],
   );
 
   const chooseGlyph = useCallback(
@@ -244,11 +292,14 @@ export function FocusPortal({ onComplete, onExit }: FocusPortalProps) {
         setPortalCharge(scanProgress);
       }
 
-      if (phase === 'far') {
-        const farProgress = Math.min(1, (now - round.phaseStartedAt) / config.farFocusMs);
-        setPortalCharge(farProgress);
-        if (farProgress >= 1) {
-          statsRef.current.farFocusMs += config.farFocusMs;
+      if (phase === 'depth') {
+        const depthProgress = Math.min(
+          1,
+          (now - round.phaseStartedAt + depthBoostMsRef.current) / config.depthChargeMs,
+        );
+        setPortalCharge(depthProgress);
+        if (depthProgress >= 1) {
+          statsRef.current.depthChargeMs += config.depthChargeMs;
           setPhase('choose');
           setRound((value) => ({ ...value, chooseStartedAt: now, phaseStartedAt: now }));
           playEffect('lock');
@@ -270,7 +321,7 @@ export function FocusPortal({ onComplete, onExit }: FocusPortalProps) {
     };
   }, [
     config.durationSeconds,
-    config.farFocusMs,
+    config.depthChargeMs,
     config.scanMs,
     finish,
     gameOver,
@@ -285,8 +336,8 @@ export function FocusPortal({ onComplete, onExit }: FocusPortalProps) {
   const portalMessage =
     phase === 'scan'
       ? 'Scan the tiny rune'
-      : phase === 'far'
-        ? 'Look at the wall star'
+      : phase === 'depth'
+        ? 'Tap depth beacons'
         : 'Pick the match';
 
   return (
@@ -294,7 +345,7 @@ export function FocusPortal({ onComplete, onExit }: FocusPortalProps) {
       <div className="mb-4 flex shrink-0 flex-wrap items-end justify-between gap-3">
         <div className="min-w-[280px] flex-1">
           <p className="text-sm font-bold uppercase text-success">Focus Portal</p>
-          <h1 className="text-2xl font-black leading-tight xl:text-3xl">Power the portal runes</h1>
+          <h1 className="text-2xl font-black leading-tight xl:text-3xl">Dive the depth portal</h1>
         </div>
         <div className="flex flex-wrap items-center justify-end gap-2">
           <HudStat label="Level" tone="text-success" value={level.toString()} />
@@ -352,7 +403,7 @@ export function FocusPortal({ onComplete, onExit }: FocusPortalProps) {
               <p className="text-xs font-black uppercase text-success">Portal Task</p>
               <h2 className="mt-1 text-2xl font-black">{portalMessage}</h2>
               <p className="mt-2 text-sm font-bold leading-6 text-white/70">
-                Tiny rune. Far star. Match rune.
+                Tiny code. Depth tunnel. Match rune.
               </p>
             </div>
 
@@ -367,11 +418,11 @@ export function FocusPortal({ onComplete, onExit }: FocusPortalProps) {
               <button
                 className="mt-6 flex min-h-14 w-full items-center justify-center gap-2 rounded-md bg-success px-5 py-3 text-xl font-black text-space-950 shadow-[0_0_24px_rgba(125,255,155,0.28)] disabled:cursor-not-allowed disabled:opacity-45"
                 disabled={phase !== 'scan' || isPaused || gameOver}
-                onPointerDown={(event) => openFarPortal(event.pointerType)}
+                onPointerDown={(event) => divePortal(event.pointerType)}
                 type="button"
               >
                 <Zap className="h-6 w-6" />
-                Open Portal
+                Dive Portal
               </button>
             </div>
           </section>
@@ -379,7 +430,8 @@ export function FocusPortal({ onComplete, onExit }: FocusPortalProps) {
           <section
             aria-label="Focus Portal game surface"
             className="relative min-h-0 overflow-hidden rounded-lg border border-success/20 bg-black/20"
-            data-far-focus-ms={config.farFocusMs}
+            data-depth-beacons={config.depthBeacons}
+            data-depth-charge-ms={config.depthChargeMs}
             data-options={config.options}
             data-phase={phase}
           >
@@ -387,7 +439,7 @@ export function FocusPortal({ onComplete, onExit }: FocusPortalProps) {
               <div
                 className={clsx(
                   'relative flex aspect-square w-[min(54vh,520px)] items-center justify-center rounded-full border-[10px] transition duration-300',
-                  phase === 'far'
+                  phase === 'depth'
                     ? 'border-success shadow-[0_0_80px_rgba(125,255,155,0.45)]'
                     : 'border-plasma/55 shadow-[0_0_52px_rgba(108,240,255,0.2)]',
                 )}
@@ -399,7 +451,7 @@ export function FocusPortal({ onComplete, onExit }: FocusPortalProps) {
                 />
                 <div className="relative z-10 text-center">
                   <div className="text-7xl font-black text-white drop-shadow-[0_0_18px_rgba(255,255,255,0.25)]">
-                    {phase === 'far' ? '★' : phase === 'choose' ? '?' : round.target}
+                    {phase === 'depth' ? '*' : phase === 'choose' ? '?' : round.target}
                   </div>
                   <div className="mt-4 h-3 w-56 overflow-hidden rounded-full bg-white/12">
                     <div
@@ -410,6 +462,28 @@ export function FocusPortal({ onComplete, onExit }: FocusPortalProps) {
                 </div>
               </div>
             </div>
+
+            {phase === 'depth' &&
+              depthBeacons.map((beacon) => (
+                <button
+                  aria-label={`Charge depth beacon ${beacon.id + 1}`}
+                  className={clsx(
+                    'absolute rounded-full border-4 border-white/70 bg-success text-space-950 shadow-[0_0_26px_rgba(125,255,155,0.62)] transition',
+                    beacon.hit ? 'scale-50 opacity-20' : 'hover:scale-110 active:scale-95',
+                  )}
+                  disabled={beacon.hit}
+                  key={beacon.id}
+                  onPointerDown={(event) => hitDepthBeacon(beacon.id, event.pointerType)}
+                  style={{
+                    height: beacon.size,
+                    left: `${beacon.xPercent}%`,
+                    top: `${beacon.yPercent}%`,
+                    transform: 'translate(-50%, -50%)',
+                    width: beacon.size,
+                  }}
+                  type="button"
+                />
+              ))}
 
             {phase === 'choose' && (
               <div className="absolute inset-x-6 bottom-6 grid grid-cols-3 gap-3">
@@ -449,7 +523,7 @@ export function FocusPortal({ onComplete, onExit }: FocusPortalProps) {
                   <p className="text-sm font-black uppercase text-nebula">Portal Collapsed</p>
                   <h2 className="mt-2 text-4xl font-black">Try the runes again</h2>
                   <p className="mt-3 leading-6 text-white/70">
-                    Scan the tiny rune, look to the wall star, then pick the matching rune.
+                    Scan the tiny rune, dive through the depth beacons, then pick the matching rune.
                   </p>
                   <div className="mt-6 flex justify-center gap-3">
                     <button
@@ -495,4 +569,21 @@ function makeRound(optionCount: number, offset = 0, now = performance.now()): Po
     phaseStartedAt: now,
     chooseStartedAt: now,
   };
+}
+
+function makeDepthBeacons(count: number, offset = 0): DepthBeacon[] {
+  const anchors = [
+    { xPercent: 28, yPercent: 32 },
+    { xPercent: 72, yPercent: 36 },
+    { xPercent: 62, yPercent: 68 },
+    { xPercent: 36, yPercent: 66 },
+  ];
+
+  return anchors.slice(0, count).map((anchor, index) => ({
+    id: index,
+    xPercent: anchor.xPercent + Math.sin(offset + index) * 4,
+    yPercent: anchor.yPercent + Math.cos(offset * 0.7 + index) * 4,
+    size: 52 - index * 3,
+    hit: false,
+  }));
 }

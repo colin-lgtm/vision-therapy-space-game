@@ -106,11 +106,17 @@ test('test lab unlocks and launches Focus Portal', async ({ page }) => {
   await page.getByRole('button', { name: 'Unlock Cards' }).click();
   await page.getByRole('button', { name: 'Launch Mission: Focus Portal' }).click();
 
-  await expect(page.getByText('Power the portal runes')).toBeVisible();
+  await expect(page.getByText('Dive the depth portal')).toBeVisible();
   const surface = page.getByLabel('Focus Portal game surface');
   await expect(surface).toBeVisible();
   await expect(surface).toHaveAttribute('data-phase', 'scan');
   await expect(surface).toHaveAttribute('data-options', '3');
+  await expect(surface).toHaveAttribute('data-depth-beacons', '2');
+
+  await page.getByRole('button', { name: 'Dive Portal' }).click();
+  await expect(surface).toHaveAttribute('data-phase', 'depth');
+  await expect(page.getByRole('button', { name: 'Charge depth beacon 1' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Charge depth beacon 2' })).toBeVisible();
 });
 
 test('dashboard is available for grown-up review', async ({ page }) => {
@@ -142,7 +148,7 @@ test('core screens keep clean visual boundaries', async ({ page }) => {
 
   await page.getByRole('button', { name: 'Star Map' }).click();
   await page.getByRole('button', { name: 'Launch Mission: Focus Portal' }).click();
-  await expect(page.getByText('Power the portal runes')).toBeVisible();
+  await expect(page.getByText('Dive the depth portal')).toBeVisible();
   await expectGameSurfaceHasRoom(page, 'Focus Portal game surface', { width: 650, height: 560 });
   await expectCleanViewport(page);
 

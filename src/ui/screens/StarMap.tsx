@@ -313,7 +313,7 @@ function MissionIllustration({ world, locked }: { world: WorldDefinition; locked
           <div className="art-portal" />
           <div className="art-rune art-rune-one">Z</div>
           <div className="art-rune art-rune-two">7</div>
-          <div className="art-wall-target" />
+          <div className="art-depth-beacon" />
         </>
       )}
       {world.visualKind === 'decoder' && (
