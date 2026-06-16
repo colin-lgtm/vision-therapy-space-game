@@ -48,6 +48,16 @@ const emptyStats: StarJumperStats = {
   bestCombo: 0,
 };
 
+const STAR_JUMPER_HUD = {
+  x: 24,
+  y: 22,
+  width: 276,
+  height: 74,
+  paddingX: 20,
+  title: 'TAP RED JUMP GATE',
+  subtitle: 'START ON GREEN',
+};
+
 function inputKindFromPointer(pointerType: string): InputKind {
   if (pointerType === 'touch' || pointerType === 'pen' || pointerType === 'mouse')
     return pointerType;
@@ -443,15 +453,22 @@ export function StarJumper({ onComplete, onExit }: StarJumperProps) {
       context.fillStyle = 'rgba(7, 17, 31, 0.76)';
       context.strokeStyle = 'rgba(255, 255, 255, 0.16)';
       context.lineWidth = 2;
-      context.roundRect(18, 18, 230, 66, 8);
+      context.roundRect(
+        STAR_JUMPER_HUD.x,
+        STAR_JUMPER_HUD.y,
+        STAR_JUMPER_HUD.width,
+        STAR_JUMPER_HUD.height,
+        8,
+      );
       context.fill();
       context.stroke();
+      const textX = STAR_JUMPER_HUD.x + STAR_JUMPER_HUD.paddingX;
       context.fillStyle = '#ffffff';
       context.font = '900 15px Verdana';
       context.textAlign = 'left';
-      context.fillText('TAP THE RED JUMP GATE', 34, 44);
+      context.fillText(STAR_JUMPER_HUD.title, textX, STAR_JUMPER_HUD.y + 27);
       context.fillStyle = '#ff6b9d';
-      context.fillText('START FROM GREEN', 34, 66);
+      context.fillText(STAR_JUMPER_HUD.subtitle, textX, STAR_JUMPER_HUD.y + 51);
       context.restore();
 
       if (remaining <= 0) {
@@ -547,6 +564,9 @@ export function StarJumper({ onComplete, onExit }: StarJumperProps) {
           aria-label="Star Jumper game surface"
           className="h-full w-full touch-none"
           data-decoys={config.decoys}
+          data-hud-box={`${STAR_JUMPER_HUD.x},${STAR_JUMPER_HUD.y},${STAR_JUMPER_HUD.width},${STAR_JUMPER_HUD.height}`}
+          data-hud-copy={`${STAR_JUMPER_HUD.title}|${STAR_JUMPER_HUD.subtitle}`}
+          data-hud-padding={STAR_JUMPER_HUD.paddingX}
           data-rule="green-origin-red-target"
           onPointerDown={(event) => {
             event.currentTarget.setPointerCapture(event.pointerId);

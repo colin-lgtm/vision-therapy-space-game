@@ -49,6 +49,23 @@ async function expectGameSurfaceHasRoom(page: import('@playwright/test').Page, l
   expect(box?.height).toBeGreaterThan(560);
 }
 
+async function expectCanvasHudCopyFits(page: import('@playwright/test').Page, label: string) {
+  const surface = page.getByLabel(label);
+  const copy = await surface.getAttribute('data-hud-copy');
+  const box = await surface.getAttribute('data-hud-box');
+  const padding = Number(await surface.getAttribute('data-hud-padding'));
+
+  expect(copy).toBeTruthy();
+  expect(box).toBeTruthy();
+  expect(Number.isFinite(padding)).toBe(true);
+
+  const [, , width] = box?.split(',').map(Number) ?? [];
+  const longestLine = Math.max(...(copy ?? '').split('|').map((line) => line.length));
+  const estimatedTextWidth = longestLine * 10;
+
+  expect(width - padding * 2).toBeGreaterThanOrEqual(estimatedTextWidth);
+}
+
 test('star map launches Orbit Tracker', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByText("Choose today's mission")).toBeVisible();
@@ -59,6 +76,9 @@ test('star map launches Orbit Tracker', async ({ page }) => {
   const surface = page.getByLabel('Orbit Tracker game surface');
   await expect(surface).toBeVisible();
   await expect(surface).toHaveAttribute('data-hud-copy', 'LOCK + CLICK TO FIRE');
+  await expect(surface).toHaveAttribute('data-hud-box', '18,18,250,64');
+  await expect(surface).toHaveAttribute('data-hud-padding', '16');
+  await expectCanvasHudCopyFits(page, 'Orbit Tracker game surface');
 });
 
 test('test lab unlocks and launches Star Jumper', async ({ page }) => {
@@ -71,6 +91,10 @@ test('test lab unlocks and launches Star Jumper', async ({ page }) => {
   await expect(surface).toBeVisible();
   await expect(surface).toHaveAttribute('data-rule', 'green-origin-red-target');
   await expect(surface).toHaveAttribute('data-decoys', '0');
+  await expect(surface).toHaveAttribute('data-hud-copy', 'TAP RED JUMP GATE|START ON GREEN');
+  await expect(surface).toHaveAttribute('data-hud-box', '24,22,276,74');
+  await expect(surface).toHaveAttribute('data-hud-padding', '20');
+  await expectCanvasHudCopyFits(page, 'Star Jumper game surface');
 });
 
 test('dashboard is available for grown-up review', async ({ page }) => {
@@ -89,6 +113,7 @@ test('core screens keep clean visual boundaries', async ({ page }) => {
   await page.getByRole('button', { name: 'Launch Mission: Orbit Tracker' }).click();
   await expect(page.getByText('Keep the beam locked')).toBeVisible();
   await expectGameSurfaceHasRoom(page, 'Orbit Tracker game surface');
+  await expectCanvasHudCopyFits(page, 'Orbit Tracker game surface');
   await expectCleanViewport(page);
 
   await page.getByRole('button', { name: 'Star Map' }).click();
@@ -96,6 +121,7 @@ test('core screens keep clean visual boundaries', async ({ page }) => {
   await page.getByRole('button', { name: 'Launch Mission: Star Jumper' }).click();
   await expect(page.getByText('Jump to the red gate')).toBeVisible();
   await expectGameSurfaceHasRoom(page, 'Star Jumper game surface');
+  await expectCanvasHudCopyFits(page, 'Star Jumper game surface');
   await expectCleanViewport(page);
 
   await page.getByRole('button', { name: 'Dashboard' }).click();
