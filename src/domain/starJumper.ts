@@ -10,6 +10,7 @@ export interface StarJumperScoreInput {
   hitRate: number;
   averageReactionMs: number;
   bestCombo: number;
+  hits: number;
   timeouts: number;
   decoyHits: number;
 }
@@ -26,10 +27,15 @@ export function starJumperConfigForLevel(level: number): StarJumperLevelConfig {
 }
 
 export function calculateStarJumperScore(input: StarJumperScoreInput): number {
-  const accuracyScore = Math.round(input.hitRate * 650);
-  const reactionScore = Math.max(0, 230 - Math.round(input.averageReactionMs / 8));
-  const comboScore = Math.min(160, input.bestCombo * 18);
-  const penalty = input.timeouts * 35 + input.decoyHits * 45;
+  const accuracyScore = Math.round(input.hitRate * 560);
+  const jumpScore = Math.min(220, input.hits * 18);
+  const reactionScore =
+    input.hits > 0 ? Math.max(0, 190 - Math.round(input.averageReactionMs / 11)) : 0;
+  const comboScore = Math.min(190, input.bestCombo * 22);
+  const penalty = input.timeouts * 24 + input.decoyHits * 36;
 
-  return Math.max(0, Math.min(1000, accuracyScore + reactionScore + comboScore - penalty));
+  return Math.max(
+    0,
+    Math.min(1000, accuracyScore + jumpScore + reactionScore + comboScore - penalty),
+  );
 }

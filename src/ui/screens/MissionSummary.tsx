@@ -10,7 +10,7 @@ interface MissionSummaryProps {
 
 export function MissionSummary({ result, onContinue }: MissionSummaryProps) {
   const stars = starsForScore(result.score);
-  const lockPercent = result.metrics.lockPercent;
+  const metrics = summaryMetrics(result);
 
   return (
     <div className="flex h-full items-center justify-center p-6">
@@ -29,18 +29,12 @@ export function MissionSummary({ result, onContinue }: MissionSummaryProps) {
         </div>
 
         <div className="mt-8 grid grid-cols-3 gap-3">
-          <div className="rounded-lg bg-white/7 p-4">
-            <div className="text-3xl font-black text-comet">{result.score}</div>
-            <div className="mt-1 text-xs font-bold uppercase text-white/60">Score</div>
-          </div>
-          <div className="rounded-lg bg-white/7 p-4">
-            <div className="text-3xl font-black text-success">{String(lockPercent)}%</div>
-            <div className="mt-1 text-xs font-bold uppercase text-white/60">Beam Lock</div>
-          </div>
-          <div className="rounded-lg bg-white/7 p-4">
-            <div className="text-3xl font-black text-plasma">{result.level}</div>
-            <div className="mt-1 text-xs font-bold uppercase text-white/60">Level</div>
-          </div>
+          {metrics.map((metric) => (
+            <div className="rounded-lg bg-white/7 p-4" key={metric.label}>
+              <div className={`text-3xl font-black ${metric.color}`}>{metric.value}</div>
+              <div className="mt-1 text-xs font-bold uppercase text-white/60">{metric.label}</div>
+            </div>
+          ))}
         </div>
 
         <button
@@ -54,4 +48,36 @@ export function MissionSummary({ result, onContinue }: MissionSummaryProps) {
       </section>
     </div>
   );
+}
+
+function summaryMetrics(result: MissionResult) {
+  if (result.worldId === 'star-jumper') {
+    return [
+      { label: 'Score', value: result.score, color: 'text-comet' },
+      {
+        label: 'Jump Accuracy',
+        value: `${metricNumber(result.metrics.hitRate)}%`,
+        color: 'text-success',
+      },
+      {
+        label: 'Best Combo',
+        value: metricNumber(result.metrics.bestCombo),
+        color: 'text-plasma',
+      },
+    ];
+  }
+
+  return [
+    { label: 'Score', value: result.score, color: 'text-comet' },
+    {
+      label: 'Beam Lock',
+      value: `${metricNumber(result.metrics.lockPercent)}%`,
+      color: 'text-success',
+    },
+    { label: 'Level', value: result.level, color: 'text-plasma' },
+  ];
+}
+
+function metricNumber(value: MissionResult['metrics'][string]): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : 0;
 }

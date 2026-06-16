@@ -17,6 +17,7 @@ describe('star jumper math', () => {
       hitRate: 0.94,
       averageReactionMs: 720,
       bestCombo: 9,
+      hits: 14,
       timeouts: 1,
       decoyHits: 0,
     });
@@ -24,11 +25,25 @@ describe('star jumper math', () => {
       hitRate: 0.42,
       averageReactionMs: 1900,
       bestCombo: 2,
+      hits: 4,
       timeouts: 5,
       decoyHits: 4,
     });
 
     expect(strong).toBeGreaterThan(weak);
     expect(strong).toBeGreaterThanOrEqual(650);
+  });
+
+  it('gives visible progress for partial successful play', () => {
+    const score = calculateStarJumperScore({
+      hitRate: 0.5,
+      averageReactionMs: 1400,
+      bestCombo: 3,
+      hits: 5,
+      timeouts: 4,
+      decoyHits: 1,
+    });
+
+    expect(score).toBeGreaterThan(250);
   });
 });

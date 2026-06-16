@@ -19,6 +19,7 @@ const canvasContext = {
   arc: vi.fn(),
   beginPath: vi.fn(),
   clearRect: vi.fn(),
+  closePath: vi.fn(),
   createRadialGradient: vi.fn(() => ({ addColorStop: vi.fn() })),
   fill: vi.fn(),
   fillRect: vi.fn(),

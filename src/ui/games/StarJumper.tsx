@@ -27,6 +27,13 @@ interface Spark {
   color: string;
 }
 
+interface JumpTrail {
+  from: Point;
+  to: Point;
+  startedAt: number;
+  durationMs: number;
+}
+
 interface StarJumperStats {
   attempts: number;
   hits: number;
@@ -63,10 +70,32 @@ function randomBetween(min: number, max: number): number {
   return min + Math.random() * (max - min);
 }
 
+function starJumperHitRate(stats: StarJumperStats): number {
+  const totalRounds = stats.hits + stats.timeouts + stats.decoyHits;
+  return totalRounds > 0 ? stats.hits / totalRounds : 0;
+}
+
+function starJumperAverageReaction(stats: StarJumperStats): number {
+  return stats.hits > 0 ? stats.totalReactionMs / stats.hits : 9999;
+}
+
+function starJumperScoreInput(stats: StarJumperStats) {
+  return {
+    hitRate: starJumperHitRate(stats),
+    averageReactionMs: starJumperAverageReaction(stats),
+    bestCombo: stats.bestCombo,
+    hits: stats.hits,
+    timeouts: stats.timeouts,
+    decoyHits: stats.decoyHits,
+  };
+}
+
 export function StarJumper({ onComplete, onExit }: StarJumperProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const gatesRef = useRef<Gate[]>([]);
   const sparksRef = useRef<Spark[]>([]);
+  const shipRef = useRef<Point | null>(null);
+  const jumpTrailRef = useRef<JumpTrail | null>(null);
   const statsRef = useRef<StarJumperStats>({ ...emptyStats });
   const activeSecondsRef = useRef(0);
   const rafRef = useRef<number | null>(null);
@@ -84,6 +113,7 @@ export function StarJumper({ onComplete, onExit }: StarJumperProps) {
   const [remainingSeconds, setRemainingSeconds] = useState(config.durationSeconds);
   const [hits, setHits] = useState(0);
   const [combo, setCombo] = useState(0);
+  const [liveScore, setLiveScore] = useState(0);
   const [lives, setLives] = useState(3);
   const [isPaused, setIsPaused] = useState(false);
   const [gameOver, setGameOver] = useState(false);
@@ -100,19 +130,10 @@ export function StarJumper({ onComplete, onExit }: StarJumperProps) {
       }
 
       const stats = statsRef.current;
-      const totalRounds = stats.hits + stats.timeouts + stats.decoyHits;
-      const hitRate = totalRounds > 0 ? stats.hits / totalRounds : 0;
-      const averageReactionMs = stats.hits > 0 ? stats.totalReactionMs / stats.hits : 9999;
+      const hitRate = starJumperHitRate(stats);
+      const averageReactionMs = starJumperAverageReaction(stats);
       const score =
-        status === 'completed'
-          ? calculateStarJumperScore({
-              hitRate,
-              averageReactionMs,
-              bestCombo: stats.bestCombo,
-              timeouts: stats.timeouts,
-              decoyHits: stats.decoyHits,
-            })
-          : 0;
+        status === 'completed' ? calculateStarJumperScore(starJumperScoreInput(stats)) : 0;
 
       void onComplete({
         worldId: 'star-jumper',
@@ -142,6 +163,8 @@ export function StarJumper({ onComplete, onExit }: StarJumperProps) {
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
     gatesRef.current = [];
     sparksRef.current = [];
+    shipRef.current = null;
+    jumpTrailRef.current = null;
     statsRef.current = { ...emptyStats };
     activeSecondsRef.current = 0;
     startRef.current = null;
@@ -153,6 +176,7 @@ export function StarJumper({ onComplete, onExit }: StarJumperProps) {
     setRemainingSeconds(config.durationSeconds);
     setHits(0);
     setCombo(0);
+    setLiveScore(0);
     setLives(3);
     setIsPaused(false);
     setGameOver(false);
@@ -226,6 +250,14 @@ export function StarJumper({ onComplete, onExit }: StarJumperProps) {
 
       if (hitGate.target) {
         const reactionMs = Math.max(0, performance.now() - gateBornAtRef.current);
+        const from = shipRef.current ?? { x: hitGate.x, y: hitGate.y };
+        jumpTrailRef.current = {
+          from,
+          to: { x: hitGate.x, y: hitGate.y },
+          startedAt: performance.now(),
+          durationMs: 360,
+        };
+        shipRef.current = { x: hitGate.x, y: hitGate.y };
         statsRef.current.hits += 1;
         statsRef.current.totalReactionMs += reactionMs;
         setHits(statsRef.current.hits);
@@ -234,6 +266,7 @@ export function StarJumper({ onComplete, onExit }: StarJumperProps) {
           statsRef.current.bestCombo = Math.max(statsRef.current.bestCombo, next);
           return next;
         });
+        setLiveScore(calculateStarJumperScore(starJumperScoreInput(statsRef.current)));
         playEffect('launch');
 
         const rect = canvasRef.current?.getBoundingClientRect();
@@ -242,6 +275,7 @@ export function StarJumper({ onComplete, onExit }: StarJumperProps) {
       }
 
       statsRef.current.decoyHits += 1;
+      setLiveScore(calculateStarJumperScore(starJumperScoreInput(statsRef.current)));
       damage();
       const rect = canvasRef.current?.getBoundingClientRect();
       if (rect) spawnRound(rect.width, rect.height, performance.now());
@@ -274,6 +308,60 @@ export function StarJumper({ onComplete, onExit }: StarJumperProps) {
         context.arc(x, y, (i % 3) + 0.8, 0, Math.PI * 2);
         context.fill();
       }
+      context.restore();
+    };
+
+    const drawShip = (now: number) => {
+      let ship = shipRef.current;
+      const jump = jumpTrailRef.current;
+      if (jump) {
+        const rawProgress = Math.min(1, (now - jump.startedAt) / jump.durationMs);
+        const progress = 1 - (1 - rawProgress) ** 3;
+        const arc = Math.sin(progress * Math.PI) * 42;
+        ship = {
+          x: jump.from.x + (jump.to.x - jump.from.x) * progress,
+          y: jump.from.y + (jump.to.y - jump.from.y) * progress - arc,
+        };
+
+        context.save();
+        context.globalAlpha = 1 - rawProgress * 0.55;
+        context.strokeStyle = '#ffd166';
+        context.lineWidth = 6;
+        context.shadowColor = '#ffd166';
+        context.shadowBlur = 18;
+        context.beginPath();
+        context.moveTo(jump.from.x, jump.from.y);
+        context.lineTo(ship.x, ship.y);
+        context.stroke();
+        context.restore();
+
+        if (rawProgress >= 1) jumpTrailRef.current = null;
+      }
+
+      if (!ship) return;
+
+      const target = gatesRef.current.find((gate) => gate.target);
+      const angle = target ? Math.atan2(target.y - ship.y, target.x - ship.x) : 0;
+      context.save();
+      context.translate(ship.x, ship.y);
+      context.rotate(angle);
+      context.shadowColor = '#6cf0ff';
+      context.shadowBlur = 18;
+      context.fillStyle = '#f4fff8';
+      context.strokeStyle = '#6cf0ff';
+      context.lineWidth = 3;
+      context.beginPath();
+      context.moveTo(24, 0);
+      context.lineTo(-18, -14);
+      context.lineTo(-9, 0);
+      context.lineTo(-18, 14);
+      context.closePath();
+      context.fill();
+      context.stroke();
+      context.fillStyle = '#ffd166';
+      context.beginPath();
+      context.arc(-18, 0, 5 + Math.sin(now / 80) * 2, 0, Math.PI * 2);
+      context.fill();
       context.restore();
     };
 
@@ -338,6 +426,7 @@ export function StarJumper({ onComplete, onExit }: StarJumperProps) {
       const width = rect.width;
       const height = rect.height;
       if (gatesRef.current.length === 0) spawnRound(width, height, now);
+      if (!shipRef.current) shipRef.current = { x: width / 2, y: height / 2 };
 
       const activeSeconds = (now - startRef.current - pausedMsRef.current) / 1000;
       activeSecondsRef.current = activeSeconds;
@@ -347,6 +436,7 @@ export function StarJumper({ onComplete, onExit }: StarJumperProps) {
       const gateAge = now - gateBornAtRef.current;
       if (gateAge > config.gateLifetimeMs) {
         statsRef.current.timeouts += 1;
+        setLiveScore(calculateStarJumperScore(starJumperScoreInput(statsRef.current)));
         damage();
         spawnRound(width, height, now);
       }
@@ -358,6 +448,7 @@ export function StarJumper({ onComplete, onExit }: StarJumperProps) {
 
       const gateProgress = Math.max(0, 1 - (now - gateBornAtRef.current) / config.gateLifetimeMs);
       gatesRef.current.forEach((gate) => drawGate(gate, now, gateProgress));
+      drawShip(now);
 
       sparksRef.current = sparksRef.current
         .map((spark) => ({ ...spark, life: spark.life - 0.045 }))
@@ -428,6 +519,10 @@ export function StarJumper({ onComplete, onExit }: StarJumperProps) {
           <div className="rounded-lg border border-white/10 bg-white/7 px-4 py-2 text-center">
             <div className="text-2xl font-black text-comet">{level}</div>
             <div className="text-xs font-bold uppercase text-white/65">Level</div>
+          </div>
+          <div className="rounded-lg border border-white/10 bg-white/7 px-4 py-2 text-center">
+            <div className="text-2xl font-black text-comet">{liveScore}</div>
+            <div className="text-xs font-bold uppercase text-white/65">Score</div>
           </div>
           <div className="rounded-lg border border-white/10 bg-white/7 px-4 py-2 text-center">
             <div className="text-2xl font-black text-success">{hits}</div>
