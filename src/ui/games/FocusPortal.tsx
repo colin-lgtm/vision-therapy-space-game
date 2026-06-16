@@ -626,8 +626,8 @@ function makeDecoys(count: number): Decoy[] {
       yStart: 0.06 + ((index * 19) % 28) / 100,
       xEnd: 0.18 + ((index * 31) % 64) / 100 + side * 0.22,
       yEnd: 0.82 + ((index * 13) % 12) / 100,
-      speed: 0.22 + (index % 4) * 0.055,
-      size: 16 + (index % 4) * 6,
+      speed: 0.62 + (index % 4) * 0.12,
+      size: 24 + (index % 4) * 8,
       spin: side * (0.9 + index * 0.13),
     };
   });
@@ -819,19 +819,19 @@ function drawDecoys(
   roundId: number,
 ) {
   decoys.forEach((decoy) => {
-    const depth = (now * 0.00008 * decoy.speed + decoy.id * 0.19 + roundId * 0.07) % 1;
-    const ease = depth ** 1.7;
+    const depth = (now * 0.00034 * decoy.speed + decoy.id * 0.31 + roundId * 0.11) % 1;
+    const ease = depth ** 1.45;
     const x = width * lerp(decoy.xStart, decoy.xEnd, ease);
     const y = height * lerp(decoy.yStart, decoy.yEnd, ease);
-    const radius = decoy.size * (0.28 + ease * 2.3);
+    const radius = decoy.size * (0.38 + ease * 2.45);
 
     context.save();
     context.translate(x, y);
     context.rotate(now * 0.001 * decoy.spin);
-    context.globalAlpha = 0.28 + ease * 0.58;
-    context.shadowBlur = 8 + ease * 14;
+    context.globalAlpha = 0.48 + ease * 0.46;
+    context.shadowBlur = 14 + ease * 20;
     context.shadowColor = '#ff6b9d';
-    context.fillStyle = '#6b4b5c';
+    context.fillStyle = '#8f5467';
     context.beginPath();
     context.moveTo(-radius * 0.72, -radius * 0.18);
     context.lineTo(-radius * 0.28, -radius * 0.7);
@@ -841,6 +841,9 @@ function drawDecoys(
     context.lineTo(-radius * 0.62, radius * 0.36);
     context.closePath();
     context.fill();
+    context.strokeStyle = 'rgba(255,209,102,0.46)';
+    context.lineWidth = Math.max(2, radius * 0.08);
+    context.stroke();
     context.restore();
   });
   context.globalAlpha = 1;

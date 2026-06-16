@@ -26,4 +26,26 @@ describe('MissionSummary', () => {
     expect(screen.queryByText('Beam Lock')).not.toBeInTheDocument();
     expect(screen.queryByText('undefined%')).not.toBeInTheDocument();
   });
+
+  it('shows Focus Portal stops instead of crash count as the reward metric', () => {
+    const result: MissionResult = {
+      worldId: 'focus-portal',
+      level: 2,
+      inputKind: 'touch',
+      status: 'completed',
+      score: 680,
+      activeSeconds: 50,
+      metrics: {
+        accuracy: 84,
+        completedCycles: 11,
+        crashes: 0,
+      },
+    };
+
+    render(<MissionSummary result={result} onContinue={vi.fn()} />);
+
+    expect(screen.getByText('Code Accuracy')).toBeInTheDocument();
+    expect(screen.getByText('Stops')).toBeInTheDocument();
+    expect(screen.queryByText('Crashes')).not.toBeInTheDocument();
+  });
 });

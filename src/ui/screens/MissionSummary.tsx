@@ -76,8 +76,8 @@ function summaryMetrics(result: MissionResult) {
         color: 'text-success',
       },
       {
-        label: 'Crashes',
-        value: metricNumber(result.metrics.crashes),
+        label: 'Stops',
+        value: metricNumber(result.metrics.completedCycles),
         color: 'text-plasma',
       },
     ];
