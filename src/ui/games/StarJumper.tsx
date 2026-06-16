@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Home, Pause, Play, RotateCcw, X, Zap } from 'lucide-react';
 import { playEffect } from '@/domain/audio';
-import { calculateStarJumperScore, starJumperConfigForLevel } from '@/domain/starJumper';
+import {
+  buildStarJumperRound,
+  calculateStarJumperScore,
+  starJumperConfigForLevel,
+  type StarJumperGate,
+} from '@/domain/starJumper';
 import { distance, type Point } from '@/domain/orbit';
 import { useAcademyStore } from '@/state/useAcademyStore';
 import type { InputKind, MissionResult } from '@/domain/types';
@@ -9,15 +14,6 @@ import type { InputKind, MissionResult } from '@/domain/types';
 interface StarJumperProps {
   onComplete: (result: MissionResult) => void | Promise<void>;
   onExit: () => void;
-}
-
-interface Gate {
-  id: number;
-  x: number;
-  y: number;
-  radius: number;
-  kind: 'origin' | 'target' | 'decoy';
-  phase: number;
 }
 
 interface Spark {
@@ -66,10 +62,6 @@ function canvasPoint(event: React.PointerEvent<HTMLCanvasElement>): Point {
   };
 }
 
-function randomBetween(min: number, max: number): number {
-  return min + Math.random() * (max - min);
-}
-
 function starJumperHitRate(stats: StarJumperStats): number {
   const totalRounds = stats.hits + stats.timeouts + stats.decoyHits;
   return totalRounds > 0 ? stats.hits / totalRounds : 0;
@@ -92,7 +84,7 @@ function starJumperScoreInput(stats: StarJumperStats) {
 
 export function StarJumper({ onComplete, onExit }: StarJumperProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const gatesRef = useRef<Gate[]>([]);
+  const gatesRef = useRef<StarJumperGate[]>([]);
   const sparksRef = useRef<Spark[]>([]);
   const shipRef = useRef<Point | null>(null);
   const jumpTrailRef = useRef<JumpTrail | null>(null);
@@ -185,60 +177,18 @@ export function StarJumper({ onComplete, onExit }: StarJumperProps) {
 
   const spawnRound = useCallback(
     (width: number, height: number, now: number, origin?: Point) => {
-      const padding = Math.max(76, config.targetRadius + 22);
-      const currentStar = origin ??
-        shipRef.current ?? {
-          x: randomBetween(padding, width - padding),
-          y: randomBetween(padding + 10, height - padding),
-        };
-      const originGate: Gate = {
-        id: gateIdRef.current,
-        x: currentStar.x,
-        y: currentStar.y,
-        radius: config.targetRadius * 0.9,
-        kind: 'origin',
-        phase: Math.random() * Math.PI * 2,
-      };
-      gateIdRef.current += 1;
-      shipRef.current = currentStar;
-
-      const target: Gate = {
-        id: gateIdRef.current,
-        x: randomBetween(padding, width - padding),
-        y: randomBetween(padding + 10, height - padding),
-        radius: config.targetRadius,
-        kind: 'target',
-        phase: Math.random() * Math.PI * 2,
-      };
-      gateIdRef.current += 1;
-
-      while (distance(originGate, target) < config.targetRadius * 3.3) {
-        target.x = randomBetween(padding, width - padding);
-        target.y = randomBetween(padding + 10, height - padding);
-      }
-
-      const gates = [originGate, target];
-      let guard = 0;
-      while (gates.length < config.decoys + 2 && guard < 80) {
-        guard += 1;
-        const candidate: Gate = {
-          id: gateIdRef.current,
-          x: randomBetween(padding, width - padding),
-          y: randomBetween(padding + 10, height - padding),
-          radius: config.targetRadius * randomBetween(0.78, 0.95),
-          kind: 'decoy',
-          phase: Math.random() * Math.PI * 2,
-        };
-        if (gates.every((gate) => distance(gate, candidate) > config.targetRadius * 2.5)) {
-          gates.push(candidate);
-          gateIdRef.current += 1;
-        }
-      }
-
-      gatesRef.current = gates;
+      const round = buildStarJumperRound(
+        config,
+        { width, height },
+        origin ?? shipRef.current,
+        gateIdRef.current,
+      );
+      gatesRef.current = round.gates;
+      gateIdRef.current = round.nextGateId;
+      shipRef.current = round.origin;
       gateBornAtRef.current = now;
     },
-    [config.decoys, config.targetRadius],
+    [config],
   );
 
   const damage = useCallback(() => {
@@ -389,7 +339,7 @@ export function StarJumper({ onComplete, onExit }: StarJumperProps) {
       context.restore();
     };
 
-    const drawGate = (gate: Gate, now: number, progress: number) => {
+    const drawGate = (gate: StarJumperGate, now: number, progress: number) => {
       const pulse = Math.sin(now / 160 + gate.phase) * 4;
       const radius = gate.radius + pulse;
       const isOrigin = gate.kind === 'origin';
@@ -596,6 +546,8 @@ export function StarJumper({ onComplete, onExit }: StarJumperProps) {
         <canvas
           aria-label="Star Jumper game surface"
           className="h-full w-full touch-none"
+          data-decoys={config.decoys}
+          data-rule="green-origin-red-target"
           onPointerDown={(event) => {
             event.currentTarget.setPointerCapture(event.pointerId);
             inputKindRef.current = inputKindFromPointer(event.pointerType);

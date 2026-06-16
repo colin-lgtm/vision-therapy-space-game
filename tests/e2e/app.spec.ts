@@ -16,7 +16,10 @@ test('test lab unlocks and launches Star Jumper', async ({ page }) => {
   await page.getByRole('button', { name: 'Launch Mission: Star Jumper' }).click();
 
   await expect(page.getByText('Jump to the red gate')).toBeVisible();
-  await expect(page.getByLabel('Star Jumper game surface')).toBeVisible();
+  const surface = page.getByLabel('Star Jumper game surface');
+  await expect(surface).toBeVisible();
+  await expect(surface).toHaveAttribute('data-rule', 'green-origin-red-target');
+  await expect(surface).toHaveAttribute('data-decoys', '0');
 });
 
 test('dashboard is available for grown-up review', async ({ page }) => {
