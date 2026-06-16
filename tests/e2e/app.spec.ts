@@ -43,10 +43,14 @@ async function expectCleanViewport(page: import('@playwright/test').Page) {
   expect(layout.overflowing).toEqual([]);
 }
 
-async function expectGameSurfaceHasRoom(page: import('@playwright/test').Page, label: string) {
+async function expectGameSurfaceHasRoom(
+  page: import('@playwright/test').Page,
+  label: string,
+  minimum = { width: 900, height: 560 },
+) {
   const box = await page.getByLabel(label).boundingBox();
-  expect(box?.width).toBeGreaterThan(900);
-  expect(box?.height).toBeGreaterThan(560);
+  expect(box?.width).toBeGreaterThan(minimum.width);
+  expect(box?.height).toBeGreaterThan(minimum.height);
 }
 
 async function expectCanvasHudCopyFits(page: import('@playwright/test').Page, label: string) {
@@ -97,6 +101,18 @@ test('test lab unlocks and launches Star Jumper', async ({ page }) => {
   await expectCanvasHudCopyFits(page, 'Star Jumper game surface');
 });
 
+test('test lab unlocks and launches Focus Portal', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Unlock Cards' }).click();
+  await page.getByRole('button', { name: 'Launch Mission: Focus Portal' }).click();
+
+  await expect(page.getByText('Power the portal runes')).toBeVisible();
+  const surface = page.getByLabel('Focus Portal game surface');
+  await expect(surface).toBeVisible();
+  await expect(surface).toHaveAttribute('data-phase', 'scan');
+  await expect(surface).toHaveAttribute('data-options', '3');
+});
+
 test('dashboard is available for grown-up review', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: /Dashboard/i }).click();
@@ -122,6 +138,12 @@ test('core screens keep clean visual boundaries', async ({ page }) => {
   await expect(page.getByText('Jump to the red gate')).toBeVisible();
   await expectGameSurfaceHasRoom(page, 'Star Jumper game surface');
   await expectCanvasHudCopyFits(page, 'Star Jumper game surface');
+  await expectCleanViewport(page);
+
+  await page.getByRole('button', { name: 'Star Map' }).click();
+  await page.getByRole('button', { name: 'Launch Mission: Focus Portal' }).click();
+  await expect(page.getByText('Power the portal runes')).toBeVisible();
+  await expectGameSurfaceHasRoom(page, 'Focus Portal game surface', { width: 650, height: 560 });
   await expectCleanViewport(page);
 
   await page.getByRole('button', { name: 'Dashboard' }).click();

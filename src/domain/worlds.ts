@@ -54,7 +54,7 @@ export const worlds: WorldDefinition[] = [
       'Focus Portal. Decode a close-up space symbol, then look far away to recharge the portal before matching the code.',
     color: '#7dff9b',
     unlockStars: 12,
-    enabledInMvp: false,
+    enabledInMvp: true,
     visualKind: 'portal',
   },
   {

@@ -42,6 +42,18 @@ describe('App', () => {
     expect(screen.getByLabelText('Star Jumper game surface')).toBeInTheDocument();
   });
 
+  it('starts Focus Portal after test unlock', async () => {
+    render(<App />);
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Unlock Cards' }));
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Launch Mission: Focus Portal' }),
+    );
+
+    expect(await screen.findByText('Power the portal runes')).toBeInTheDocument();
+    expect(screen.getByLabelText('Focus Portal game surface')).toBeInTheDocument();
+  });
+
   it('shows audio briefing and test unlock affordances on the star map', async () => {
     render(<App />);
 

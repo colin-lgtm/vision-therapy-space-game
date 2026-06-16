@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Activity, BarChart3, Rocket, Settings } from 'lucide-react';
+import { FocusPortal } from './games/FocusPortal';
 import { OrbitTracker } from './games/OrbitTracker';
 import { StarJumper } from './games/StarJumper';
 import { GrownupDashboard } from './screens/GrownupDashboard';
@@ -98,6 +99,9 @@ export function App() {
         )}
         {screen.name === 'mission' && screen.worldId === 'star-jumper' && (
           <StarJumper onComplete={completeMission} onExit={() => setScreen({ name: 'map' })} />
+        )}
+        {screen.name === 'mission' && screen.worldId === 'focus-portal' && (
+          <FocusPortal onComplete={completeMission} onExit={() => setScreen({ name: 'map' })} />
         )}
         {screen.name === 'summary' && (
           <MissionSummary result={screen.result} onContinue={() => setScreen({ name: 'map' })} />

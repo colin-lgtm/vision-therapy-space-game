@@ -12,6 +12,7 @@ The app is designed as a private family tool. It is not a diagnostic product, a 
 - Local persistence through Electron storage with browser fallback for development
 - Orbit Tracker world with touch/pen/mouse beam-lock gameplay, click-to-fire shooting, meteors, alien ships, hull damage, shield energy, and lock-on effects
 - Star Jumper world with ship-to-star jumping, red destination gates, decoys, lives, combos, reaction timing, and level-scaled difficulty
+- Focus Portal world with near-rune scanning, far-look portal charging, symbol matching, lives, accuracy scoring, and level-scaled option counts
 - Level progression, stars, rank, cosmetics, unlocks, and mission summaries
 - Grown-up dashboard with progress metrics and JSON export
 - Test Lab unlock control for inspecting mission cards without grinding progression

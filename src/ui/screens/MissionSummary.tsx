@@ -67,6 +67,22 @@ function summaryMetrics(result: MissionResult) {
     ];
   }
 
+  if (result.worldId === 'focus-portal') {
+    return [
+      { label: 'Score', value: result.score, color: 'text-comet' },
+      {
+        label: 'Rune Accuracy',
+        value: `${metricNumber(result.metrics.accuracy)}%`,
+        color: 'text-success',
+      },
+      {
+        label: 'Cycles',
+        value: metricNumber(result.metrics.completedCycles),
+        color: 'text-plasma',
+      },
+    ];
+  }
+
   return [
     { label: 'Score', value: result.score, color: 'text-comet' },
     {
