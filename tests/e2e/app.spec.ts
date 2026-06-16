@@ -56,7 +56,9 @@ test('star map launches Orbit Tracker', async ({ page }) => {
   await page.getByRole('button', { name: 'Launch Mission: Orbit Tracker' }).click();
 
   await expect(page.getByText('Keep the beam locked')).toBeVisible();
-  await expect(page.getByLabel('Orbit Tracker game surface')).toBeVisible();
+  const surface = page.getByLabel('Orbit Tracker game surface');
+  await expect(surface).toBeVisible();
+  await expect(surface).toHaveAttribute('data-hud-copy', 'LOCK + CLICK TO FIRE');
 });
 
 test('test lab unlocks and launches Star Jumper', async ({ page }) => {

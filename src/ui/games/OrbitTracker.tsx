@@ -625,20 +625,20 @@ export function OrbitTracker({ onComplete, onExit }: OrbitTrackerProps) {
       context.fillText('LOCK', target.x, target.y);
 
       context.save();
-      context.fillStyle = 'rgba(7, 17, 31, 0.72)';
-      context.strokeStyle = 'rgba(255, 255, 255, 0.18)';
+      context.fillStyle = 'rgba(7, 17, 31, 0.74)';
+      context.strokeStyle = 'rgba(255, 255, 255, 0.2)';
       context.lineWidth = 2;
-      context.roundRect(18, 18, 220, 64, 8);
+      context.roundRect(18, 18, 250, 64, 8);
       context.fill();
       context.stroke();
       context.fillStyle = '#ffffff';
       context.font = '900 14px Verdana';
       context.textAlign = 'left';
-      context.fillText('CLICK WHILE LOCKED TO FIRE', 34, 42);
+      context.fillText('LOCK + CLICK TO FIRE', 34, 42);
       context.fillStyle = '#ff6b9d';
-      context.fillRect(34, 54, 172, 10);
+      context.fillRect(34, 54, 196, 10);
       context.fillStyle = '#7dff9b';
-      context.fillRect(34, 54, 172 * (hullHealthRef.current / 100), 10);
+      context.fillRect(34, 54, 196 * (hullHealthRef.current / 100), 10);
       context.restore();
 
       if (remaining <= 0) {
@@ -723,6 +723,7 @@ export function OrbitTracker({ onComplete, onExit }: OrbitTrackerProps) {
         <canvas
           aria-label="Orbit Tracker game surface"
           className="h-full w-full touch-none"
+          data-hud-copy="LOCK + CLICK TO FIRE"
           onPointerCancel={() => {
             pointerRef.current = null;
           }}
