@@ -45,7 +45,7 @@ export function orbitConfigForLevel(level: number): OrbitLevelConfig {
   return {
     level: clamped,
     targetRadius: Math.max(28, 56 - clamped * 0.8),
-    speed: 0.62 + clamped * 0.06,
+    speed: Math.min(1.55, Number((0.34 * 1.15 ** (clamped - 1)).toFixed(3))),
     path: paths[Math.floor((clamped - 1) / 2) % paths.length],
     durationSeconds: Math.min(120, 55 + clamped * 3),
   };

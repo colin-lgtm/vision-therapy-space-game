@@ -7,8 +7,19 @@ describe('orbit math', () => {
     const high = orbitConfigForLevel(30);
 
     expect(first.targetRadius).toBeGreaterThan(high.targetRadius);
+    expect(first.speed).toBeCloseTo(0.34);
     expect(high.targetRadius).toBeGreaterThanOrEqual(28);
     expect(high.durationSeconds).toBeLessThanOrEqual(120);
+  });
+
+  it('starts slowly and ramps target speed by about 10 to 20 percent per early level', () => {
+    const first = orbitConfigForLevel(1);
+    const second = orbitConfigForLevel(2);
+    const fifth = orbitConfigForLevel(5);
+
+    expect(second.speed / first.speed).toBeGreaterThanOrEqual(1.1);
+    expect(second.speed / first.speed).toBeLessThanOrEqual(1.2);
+    expect(fifth.speed).toBeGreaterThan(second.speed);
   });
 
   it('adds more advanced paths as levels increase', () => {
