@@ -485,38 +485,38 @@ export function StarJumper({ onComplete, onExit }: StarJumperProps) {
 
   return (
     <div className="flex h-full flex-col p-5">
-      <div className="mb-4 flex shrink-0 items-center justify-between gap-4">
-        <div>
+      <div className="mb-4 flex shrink-0 flex-wrap items-end justify-between gap-3">
+        <div className="min-w-[280px] flex-1">
           <p className="text-sm font-bold uppercase text-comet">Star Jumper</p>
-          <h1 className="text-3xl font-black">Jump to the red gate</h1>
+          <h1 className="text-2xl font-black leading-tight xl:text-3xl">Jump to the red gate</h1>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="rounded-lg border border-white/10 bg-white/7 px-4 py-2 text-center">
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <div className="min-w-[78px] rounded-lg border border-white/10 bg-white/7 px-3 py-2 text-center">
             <div className="text-2xl font-black text-comet">{level}</div>
             <div className="text-xs font-bold uppercase text-white/65">Level</div>
           </div>
-          <div className="rounded-lg border border-white/10 bg-white/7 px-4 py-2 text-center">
+          <div className="min-w-[78px] rounded-lg border border-white/10 bg-white/7 px-3 py-2 text-center">
             <div className="text-2xl font-black text-comet">{liveScore}</div>
             <div className="text-xs font-bold uppercase text-white/65">Score</div>
           </div>
-          <div className="rounded-lg border border-white/10 bg-white/7 px-4 py-2 text-center">
+          <div className="min-w-[78px] rounded-lg border border-white/10 bg-white/7 px-3 py-2 text-center">
             <div className="text-2xl font-black text-success">{hits}</div>
             <div className="text-xs font-bold uppercase text-white/65">Jumps</div>
           </div>
-          <div className="rounded-lg border border-white/10 bg-white/7 px-4 py-2 text-center">
+          <div className="min-w-[78px] rounded-lg border border-white/10 bg-white/7 px-3 py-2 text-center">
             <div className="text-2xl font-black text-plasma">{combo}</div>
             <div className="text-xs font-bold uppercase text-white/65">Combo</div>
           </div>
-          <div className="rounded-lg border border-white/10 bg-white/7 px-4 py-2 text-center">
+          <div className="min-w-[78px] rounded-lg border border-white/10 bg-white/7 px-3 py-2 text-center">
             <div className="text-2xl font-black text-nebula">{lives}</div>
             <div className="text-xs font-bold uppercase text-white/65">Lives</div>
           </div>
-          <div className="rounded-lg border border-white/10 bg-white/7 px-4 py-2 text-center">
+          <div className="min-w-[82px] rounded-lg border border-white/10 bg-white/7 px-3 py-2 text-center">
             <div className="text-2xl font-black text-comet">{roundedTime}s</div>
             <div className="text-xs font-bold uppercase text-white/65">Fuel</div>
           </div>
           <button
-            className="flex min-h-12 items-center gap-2 rounded-md border border-white/10 bg-white/7 px-4 py-2 font-bold hover:bg-white/12"
+            className="flex min-h-12 min-w-[104px] items-center justify-center gap-2 rounded-md border border-white/10 bg-white/7 px-4 py-2 font-bold hover:bg-white/12"
             onClick={() => setIsPaused((value) => !value)}
             type="button"
           >
@@ -524,7 +524,7 @@ export function StarJumper({ onComplete, onExit }: StarJumperProps) {
             {isPaused ? 'Resume' : 'Pause'}
           </button>
           <button
-            className="flex min-h-12 items-center gap-2 rounded-md border border-white/10 bg-white/7 px-4 py-2 font-bold hover:bg-white/12"
+            className="flex min-h-12 min-w-[86px] items-center justify-center gap-2 rounded-md border border-white/10 bg-white/7 px-4 py-2 font-bold hover:bg-white/12"
             onClick={onExit}
             type="button"
           >
@@ -532,7 +532,7 @@ export function StarJumper({ onComplete, onExit }: StarJumperProps) {
             Map
           </button>
           <button
-            className="flex min-h-12 items-center gap-2 rounded-md bg-nebula px-4 py-2 font-black text-white hover:brightness-110"
+            className="flex min-h-12 min-w-[88px] items-center justify-center gap-2 rounded-md bg-nebula px-4 py-2 font-black text-white hover:brightness-110"
             onClick={() => finish('quit')}
             type="button"
           >

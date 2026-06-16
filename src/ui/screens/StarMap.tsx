@@ -114,8 +114,7 @@ export function StarMap({ onLaunchWorld }: StarMapProps) {
               Audio Briefings
             </p>
             <p className="mt-2 text-sm leading-6 text-white/72">
-              Tap the speaker on a mission tile to hear what to do. The pictures show the job even
-              before reading the words.
+              Tap a speaker for voice help. The pictures show what each mission does.
             </p>
           </section>
 
@@ -125,7 +124,7 @@ export function StarMap({ onLaunchWorld }: StarMapProps) {
               Test Lab
             </p>
             <p className="mt-2 text-sm leading-6 text-white/72">
-              Unlock every mission card for inspection. Only finished worlds show a launch button.
+              Unlock every card for inspection. Finished worlds can launch.
             </p>
             <button
               className="mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-md border border-nebula/35 bg-nebula/18 px-3 py-2 font-black text-white hover:bg-nebula/26"
@@ -181,9 +180,11 @@ function MissionTile({
       )}
       style={{ '--mission-color': world.color } as CSSProperties}
     >
-      <div className="absolute inset-0 opacity-80">
+      <div className="absolute inset-0 opacity-70">
         <MissionIllustration world={world} locked={!isUnlocked} />
       </div>
+      <div className="absolute inset-0 bg-gradient-to-br from-space-950/95 via-space-950/66 to-space-950/12" />
+      <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-space-950/92 to-transparent" />
 
       <div className="relative flex h-full flex-col justify-between gap-2">
         <div>
