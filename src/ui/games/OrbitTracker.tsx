@@ -578,17 +578,6 @@ export function OrbitTracker({ onComplete, onExit }: OrbitTrackerProps) {
       context.stroke();
       context.restore();
 
-      if (pointer) {
-        context.save();
-        context.strokeStyle = isLocked ? 'rgba(125, 255, 155, 0.72)' : 'rgba(255, 107, 157, 0.62)';
-        context.lineWidth = 5;
-        context.beginPath();
-        context.moveTo(pointer.x, pointer.y);
-        context.lineTo(target.x, target.y);
-        context.stroke();
-        context.restore();
-      }
-
       threatsRef.current.forEach(drawThreat);
       boltsRef.current.forEach(drawBolt);
       shotsRef.current.forEach(drawShot);

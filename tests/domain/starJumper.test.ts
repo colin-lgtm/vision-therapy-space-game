@@ -17,6 +17,14 @@ describe('star jumper math', () => {
     expect(high.targetRadius).toBeGreaterThanOrEqual(34);
   });
 
+  it('keeps the level one destination gate open twice as long for beginner pacing', () => {
+    const first = starJumperConfigForLevel(1);
+    const second = starJumperConfigForLevel(2);
+
+    expect(first.gateLifetimeMs).toBe(4610);
+    expect(first.gateLifetimeMs).toBeGreaterThan(second.gateLifetimeMs);
+  });
+
   it('starts level one with only an origin and red target gate', () => {
     const config = starJumperConfigForLevel(1);
     const round = buildStarJumperRound(

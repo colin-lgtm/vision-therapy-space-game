@@ -42,10 +42,11 @@ export interface StarJumperRound {
 
 export function starJumperConfigForLevel(level: number): StarJumperLevelConfig {
   const clamped = Math.max(1, Math.min(30, level));
+  const baseGateLifetimeMs = Math.max(950, 2350 - clamped * 45);
   return {
     level: clamped,
     durationSeconds: Math.min(90, 42 + clamped * 2),
-    gateLifetimeMs: Math.max(950, 2350 - clamped * 45),
+    gateLifetimeMs: clamped === 1 ? baseGateLifetimeMs * 2 : baseGateLifetimeMs,
     decoys: Math.min(5, Math.floor(Math.max(0, clamped - 2) / 4)),
     targetRadius: Math.max(34, 58 - clamped * 0.7),
   };
