@@ -158,6 +158,34 @@ button {
   animation: star-pop 1.9s ease-out infinite;
 }
 
+.dual-signal-enemy {
+  animation: dual-signal-approach 1.8s ease-in-out infinite alternate;
+  transform-origin: center bottom;
+}
+
+.dual-signal-enemy-hit {
+  animation: dual-signal-hit 0.62s ease-out forwards;
+}
+
+.dual-signal-laser {
+  animation: dual-signal-laser 0.42s ease-out forwards;
+  transform-origin: bottom center;
+}
+
+.dual-signal-explosion {
+  background:
+    radial-gradient(
+      circle,
+      rgba(255, 210, 87, 0.94) 0 18%,
+      rgba(255, 107, 157, 0.72) 26%,
+      transparent 58%
+    ),
+    radial-gradient(circle, rgba(108, 240, 255, 0.8) 0 16%, transparent 48%);
+  filter: blur(0.2px);
+  opacity: 0;
+  animation: dual-signal-explosion 0.62s ease-out forwards;
+}
+
 .star-orbit {
   position: absolute;
   border-radius: 999px;
@@ -525,6 +553,67 @@ button {
   100% {
     opacity: 0;
     transform: translateY(-90px) scale(1.25) rotate(120deg);
+  }
+}
+
+@keyframes dual-signal-approach {
+  from {
+    transform: translateX(-50%) translateY(-6px) scale(0.82);
+  }
+
+  to {
+    transform: translateX(-50%) translateY(18px) scale(1.04);
+  }
+}
+
+@keyframes dual-signal-hit {
+  0% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(14px) scale(1.04);
+  }
+
+  45% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(2px) scale(1.16) rotate(-4deg);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-20px) scale(0.34) rotate(12deg);
+  }
+}
+
+@keyframes dual-signal-laser {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) scaleY(0.12);
+  }
+
+  16% {
+    opacity: 1;
+    transform: translateX(-50%) scaleY(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) scaleY(1.08);
+  }
+}
+
+@keyframes dual-signal-explosion {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.2);
+  }
+
+  28% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) scale(1.7);
   }
 }
 

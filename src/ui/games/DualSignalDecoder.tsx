@@ -26,6 +26,11 @@ interface DualSignalStats {
   timeouts: number;
 }
 
+interface LaserBurst {
+  id: number;
+  pair: string;
+}
+
 const emptyStats: DualSignalStats = {
   attempts: 0,
   hits: 0,
@@ -66,6 +71,9 @@ export function DualSignalDecoder({ onComplete, onExit }: DualSignalDecoderProps
   const shieldRef = useRef(100);
   const comboRef = useRef(0);
   const timedOutRoundRef = useRef(-1);
+  const resolvingRoundRef = useRef(false);
+  const laserTimeoutRef = useRef<number | null>(null);
+  const signalProgressRef = useRef(1);
 
   const [round, setRound] = useState<DualSignalRound>(() => makeDualSignalRound(config.options));
   const [roundStartedAt, setRoundStartedAt] = useState(() => performance.now());
@@ -78,6 +86,7 @@ export function DualSignalDecoder({ onComplete, onExit }: DualSignalDecoderProps
   const [isPaused, setIsPaused] = useState(false);
   const [gameOver, setGameOver] = useState(false);
   const [restartNonce, setRestartNonce] = useState(0);
+  const [laserBurst, setLaserBurst] = useState<LaserBurst | null>(null);
 
   const scoreFromStats = useCallback(
     (stats: DualSignalStats) =>
@@ -127,10 +136,21 @@ export function DualSignalDecoder({ onComplete, onExit }: DualSignalDecoderProps
   const startNextRound = useCallback(() => {
     const now = performance.now();
     roundIdRef.current += 1;
+    resolvingRoundRef.current = false;
+    signalProgressRef.current = 1;
+    setLaserBurst(null);
     setRound(makeDualSignalRound(config.options, roundIdRef.current));
     setRoundStartedAt(now);
     setSignalProgress(1);
   }, [config.options]);
+
+  const scheduleNextRoundAfterLaser = useCallback(() => {
+    if (laserTimeoutRef.current !== null) window.clearTimeout(laserTimeoutRef.current);
+    laserTimeoutRef.current = window.setTimeout(() => {
+      laserTimeoutRef.current = null;
+      startNextRound();
+    }, 620);
+  }, [startNextRound]);
 
   const damageShield = useCallback((amount: number) => {
     const next = Math.max(0, shieldRef.current - amount);
@@ -161,6 +181,12 @@ export function DualSignalDecoder({ onComplete, onExit }: DualSignalDecoderProps
     shieldRef.current = 100;
     comboRef.current = 0;
     timedOutRoundRef.current = -1;
+    resolvingRoundRef.current = false;
+    signalProgressRef.current = 1;
+    if (laserTimeoutRef.current !== null) {
+      window.clearTimeout(laserTimeoutRef.current);
+      laserTimeoutRef.current = null;
+    }
     setRound(makeDualSignalRound(config.options));
     setRoundStartedAt(performance.now());
     setRemainingSeconds(config.durationSeconds);
@@ -171,12 +197,13 @@ export function DualSignalDecoder({ onComplete, onExit }: DualSignalDecoderProps
     setLiveScore(0);
     setIsPaused(false);
     setGameOver(false);
+    setLaserBurst(null);
     setRestartNonce((value) => value + 1);
   }, [config.durationSeconds, config.options]);
 
   const choosePair = useCallback(
     (pair: string, pointerType: string) => {
-      if (gameOver || isPaused) return;
+      if (gameOver || isPaused || resolvingRoundRef.current) return;
       inputKindRef.current = inputKindFromPointer(pointerType);
       const stats = statsRef.current;
       const now = performance.now();
@@ -193,8 +220,11 @@ export function DualSignalDecoder({ onComplete, onExit }: DualSignalDecoderProps
         setDecoded(stats.decodedPairs);
         setCombo(comboRef.current);
         setLiveScore(scoreFromStats(stats));
-        playEffect(comboRef.current >= 3 ? 'complete' : 'lock');
-        startNextRound();
+        resolvingRoundRef.current = true;
+        setLaserBurst({ id: roundIdRef.current, pair });
+        playEffect('laser');
+        window.setTimeout(() => playEffect(comboRef.current >= 3 ? 'complete' : 'hit'), 240);
+        scheduleNextRoundAfterLaser();
         return;
       }
 
@@ -208,6 +238,7 @@ export function DualSignalDecoder({ onComplete, onExit }: DualSignalDecoderProps
       isPaused,
       round.targetPair,
       roundStartedAt,
+      scheduleNextRoundAfterLaser,
       scoreFromStats,
       startNextRound,
     ],
@@ -236,10 +267,17 @@ export function DualSignalDecoder({ onComplete, onExit }: DualSignalDecoderProps
       const remaining = Math.max(0, config.durationSeconds - activeSeconds);
       setRemainingSeconds(remaining);
 
-      const progress = Math.max(0, 1 - (now - roundStartedAt) / config.signalMs);
+      const progress = resolvingRoundRef.current
+        ? signalProgressRef.current
+        : Math.max(0, 1 - (now - roundStartedAt) / config.signalMs);
+      signalProgressRef.current = progress;
       setSignalProgress(progress);
 
-      if (progress <= 0 && timedOutRoundRef.current !== roundIdRef.current) {
+      if (
+        progress <= 0 &&
+        !resolvingRoundRef.current &&
+        timedOutRoundRef.current !== roundIdRef.current
+      ) {
         timedOutRoundRef.current = roundIdRef.current;
         statsRef.current.mistakes += 1;
         statsRef.current.timeouts += 1;
@@ -269,6 +307,13 @@ export function DualSignalDecoder({ onComplete, onExit }: DualSignalDecoderProps
     scoreFromStats,
     startNextRound,
   ]);
+
+  useEffect(
+    () => () => {
+      if (laserTimeoutRef.current !== null) window.clearTimeout(laserTimeoutRef.current);
+    },
+    [],
+  );
 
   const roundedTime = Math.ceil(remainingSeconds);
   const accuracy = Math.round(signalAccuracy(statsRef.current) * 100);
@@ -321,6 +366,7 @@ export function DualSignalDecoder({ onComplete, onExit }: DualSignalDecoderProps
         data-combo={combo}
         data-decoded={decoded}
         data-options={config.options}
+        data-laser-state={laserBurst ? 'firing' : 'idle'}
         data-shield={Math.round(shield)}
         data-signal-ms={config.signalMs}
         data-signal-progress={signalProgress.toFixed(2)}
@@ -358,6 +404,7 @@ export function DualSignalDecoder({ onComplete, onExit }: DualSignalDecoderProps
                   }}
                 />
                 <Shield className="h-24 w-24 text-success drop-shadow-[0_0_22px_rgba(125,255,155,0.42)]" />
+                <EnemyShip laserBurst={laserBurst} pair={round.targetPair} />
                 <div className="absolute bottom-10 text-center">
                   <div className="text-xs font-black uppercase text-white/50">Signal Time</div>
                   <div className="text-3xl font-black text-comet">{signalPercent}%</div>
@@ -481,6 +528,39 @@ function SignalTower({
       >
         {signal}
       </div>
+    </div>
+  );
+}
+
+function EnemyShip({ laserBurst, pair }: { laserBurst: LaserBurst | null; pair: string }) {
+  return (
+    <div
+      className={clsx(
+        'dual-signal-enemy absolute left-1/2 top-9 flex -translate-x-1/2 flex-col items-center',
+        laserBurst && 'dual-signal-enemy-hit',
+      )}
+      data-enemy-pair={pair}
+    >
+      <div className="relative flex h-20 w-24 items-center justify-center">
+        <div className="absolute top-2 h-10 w-16 rounded-[50%] border border-nebula/60 bg-nebula/20 shadow-[0_0_22px_rgba(255,107,157,0.28)]" />
+        <div className="absolute bottom-1 h-8 w-24 rounded-[50%] border border-plasma/55 bg-plasma/18 shadow-[0_0_22px_rgba(108,240,255,0.22)]" />
+        <div className="absolute bottom-5 h-5 w-5 rounded-full bg-comet shadow-[0_0_18px_rgba(255,210,87,0.55)]" />
+        <div className="absolute -left-2 bottom-3 h-3 w-5 rounded-full bg-nebula/70" />
+        <div className="absolute -right-2 bottom-3 h-3 w-5 rounded-full bg-plasma/70" />
+      </div>
+      <div className="rounded-md border border-white/14 bg-space-950/82 px-3 py-1 text-lg font-black text-white">
+        {pair}
+      </div>
+
+      {laserBurst && (
+        <>
+          <div className="dual-signal-laser absolute left-1/2 top-20 h-44 w-3 -translate-x-1/2 rounded-full bg-plasma shadow-[0_0_28px_rgba(108,240,255,0.9)]" />
+          <div className="dual-signal-explosion absolute left-1/2 top-2 h-28 w-28 -translate-x-1/2 rounded-full" />
+          <div className="absolute -top-4 left-1/2 -translate-x-1/2 rounded-md border border-comet/40 bg-comet/18 px-3 py-1 text-sm font-black uppercase text-comet">
+            Direct hit
+          </div>
+        </>
+      )}
     </div>
   );
 }

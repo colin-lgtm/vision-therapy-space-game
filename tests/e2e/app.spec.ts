@@ -171,7 +171,10 @@ test('test lab unlocks and launches Dual-Signal Decoder', async ({ page }) => {
 
   const targetPair = await surface.getAttribute('data-target-pair');
   await page.getByRole('button', { name: `Signal pair ${targetPair}` }).click();
+  await expect(surface).toHaveAttribute('data-laser-state', 'firing');
+  await expect(page.getByText('Direct hit')).toBeVisible();
   await expect(surface).toHaveAttribute('data-decoded', '1');
+  await expect(surface).toHaveAttribute('data-laser-state', 'idle');
 });
 
 test('dashboard is available for grown-up review', async ({ page }) => {
