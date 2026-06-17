@@ -163,6 +163,56 @@ button {
   transform-origin: center bottom;
 }
 
+.dual-signal-threat-aura {
+  position: absolute;
+  left: 50%;
+  top: 42px;
+  height: 112px;
+  width: 190px;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(255, 107, 157, 0.18), transparent 64%);
+  filter: blur(4px);
+}
+
+.dual-signal-ship-svg {
+  position: relative;
+  z-index: 1;
+  overflow: visible;
+  filter: drop-shadow(0 0 18px rgba(108, 240, 255, 0.34))
+    drop-shadow(0 0 26px rgba(255, 107, 157, 0.24));
+}
+
+.dual-signal-ship-light {
+  animation: dual-signal-ship-light 0.86s ease-in-out infinite alternate;
+  filter: drop-shadow(0 0 9px rgba(255, 210, 87, 0.85));
+}
+
+.dual-signal-engine-flame {
+  animation: dual-signal-engine-flame 0.22s ease-in-out infinite alternate;
+  filter: drop-shadow(0 0 12px rgba(255, 210, 87, 0.75));
+  transform-origin: 90px 94px;
+}
+
+.dual-signal-scanline {
+  position: absolute;
+  left: 32px;
+  right: 32px;
+  top: 48px;
+  z-index: 2;
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, rgba(125, 255, 155, 0.88), transparent);
+  box-shadow: 0 0 16px rgba(125, 255, 155, 0.55);
+  animation: dual-signal-scanline 1.3s ease-in-out infinite;
+}
+
+.dual-signal-code-badge {
+  position: relative;
+  z-index: 3;
+  box-shadow: 0 0 16px rgba(255, 255, 255, 0.09);
+}
+
 .dual-signal-enemy-hit {
   animation: dual-signal-hit 0.62s ease-out forwards;
 }
@@ -184,6 +234,31 @@ button {
   filter: blur(0.2px);
   opacity: 0;
   animation: dual-signal-explosion 0.62s ease-out forwards;
+}
+
+.dual-signal-debris {
+  position: absolute;
+  left: 50%;
+  top: 48px;
+  z-index: 4;
+  height: 10px;
+  width: 28px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #ffd257, #ff6b9d, #6cf0ff);
+  box-shadow: 0 0 16px rgba(255, 210, 87, 0.55);
+  opacity: 0;
+}
+
+.dual-signal-debris-a {
+  animation: dual-signal-debris-a 0.62s ease-out forwards;
+}
+
+.dual-signal-debris-b {
+  animation: dual-signal-debris-b 0.62s ease-out forwards;
+}
+
+.dual-signal-debris-c {
+  animation: dual-signal-debris-c 0.62s ease-out forwards;
 }
 
 .star-orbit {
@@ -558,11 +633,48 @@ button {
 
 @keyframes dual-signal-approach {
   from {
-    transform: translateX(-50%) translateY(-6px) scale(0.82);
+    transform: translateX(-50%) translateY(-9px) scale(0.78) rotate(-1deg);
   }
 
   to {
-    transform: translateX(-50%) translateY(18px) scale(1.04);
+    transform: translateX(-50%) translateY(20px) scale(1.05) rotate(1deg);
+  }
+}
+
+@keyframes dual-signal-ship-light {
+  from {
+    opacity: 0.38;
+    transform: scale(0.82);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1.18);
+  }
+}
+
+@keyframes dual-signal-engine-flame {
+  from {
+    opacity: 0.58;
+    transform: scaleY(0.72);
+  }
+
+  to {
+    opacity: 1;
+    transform: scaleY(1.08);
+  }
+}
+
+@keyframes dual-signal-scanline {
+  0%,
+  100% {
+    opacity: 0.18;
+    transform: translateY(-20px) scaleX(0.72);
+  }
+
+  50% {
+    opacity: 0.9;
+    transform: translateY(26px) scaleX(1.08);
   }
 }
 
@@ -614,6 +726,42 @@ button {
   100% {
     opacity: 0;
     transform: translateX(-50%) scale(1.7);
+  }
+}
+
+@keyframes dual-signal-debris-a {
+  0% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) rotate(12deg);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateX(-128px) translateY(-52px) rotate(-120deg);
+  }
+}
+
+@keyframes dual-signal-debris-b {
+  0% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) rotate(-8deg);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateX(98px) translateY(-38px) rotate(150deg);
+  }
+}
+
+@keyframes dual-signal-debris-c {
+  0% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) rotate(28deg);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateX(-18px) translateY(72px) rotate(210deg);
   }
 }
 

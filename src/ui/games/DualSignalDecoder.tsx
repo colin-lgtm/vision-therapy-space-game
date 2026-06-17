@@ -536,19 +536,74 @@ function EnemyShip({ laserBurst, pair }: { laserBurst: LaserBurst | null; pair: 
   return (
     <div
       className={clsx(
-        'dual-signal-enemy absolute left-1/2 top-9 flex -translate-x-1/2 flex-col items-center',
+        'dual-signal-enemy absolute left-1/2 top-7 flex -translate-x-1/2 flex-col items-center',
         laserBurst && 'dual-signal-enemy-hit',
       )}
       data-enemy-pair={pair}
     >
-      <div className="relative flex h-20 w-24 items-center justify-center">
-        <div className="absolute top-2 h-10 w-16 rounded-[50%] border border-nebula/60 bg-nebula/20 shadow-[0_0_22px_rgba(255,107,157,0.28)]" />
-        <div className="absolute bottom-1 h-8 w-24 rounded-[50%] border border-plasma/55 bg-plasma/18 shadow-[0_0_22px_rgba(108,240,255,0.22)]" />
-        <div className="absolute bottom-5 h-5 w-5 rounded-full bg-comet shadow-[0_0_18px_rgba(255,210,87,0.55)]" />
-        <div className="absolute -left-2 bottom-3 h-3 w-5 rounded-full bg-nebula/70" />
-        <div className="absolute -right-2 bottom-3 h-3 w-5 rounded-full bg-plasma/70" />
+      <div className="dual-signal-threat-aura" aria-hidden="true" />
+      <div className="relative h-28 w-40">
+        <svg
+          aria-hidden="true"
+          className="dual-signal-ship-svg h-full w-full"
+          viewBox="0 0 180 126"
+        >
+          <defs>
+            <linearGradient id="enemyHull" x1="18" x2="162" y1="72" y2="72">
+              <stop offset="0" stopColor="#ff6b9d" stopOpacity="0.9" />
+              <stop offset="0.52" stopColor="#6cf0ff" stopOpacity="0.95" />
+              <stop offset="1" stopColor="#7dff9b" stopOpacity="0.82" />
+            </linearGradient>
+            <radialGradient id="enemyGlass" cx="50%" cy="42%" r="62%">
+              <stop offset="0" stopColor="#7dff9b" stopOpacity="0.95" />
+              <stop offset="0.56" stopColor="#192b46" stopOpacity="0.88" />
+              <stop offset="1" stopColor="#ff6b9d" stopOpacity="0.52" />
+            </radialGradient>
+            <filter id="enemyGlow" x="-35%" y="-35%" width="170%" height="170%">
+              <feGaussianBlur stdDeviation="3" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+
+          <path
+            d="M24 76 C34 48 146 48 156 76 C144 101 36 101 24 76 Z"
+            fill="url(#enemyHull)"
+            filter="url(#enemyGlow)"
+            opacity="0.92"
+          />
+          <path
+            d="M42 74 C57 60 123 60 138 74 C122 86 58 86 42 74 Z"
+            fill="#081729"
+            opacity="0.58"
+          />
+          <path
+            d="M58 66 C63 29 117 29 122 66 C107 78 73 78 58 66 Z"
+            fill="url(#enemyGlass)"
+            stroke="#d8fff4"
+            strokeOpacity="0.76"
+            strokeWidth="3"
+          />
+          <path d="M20 77 L3 64 L15 91 Z" fill="#ff6b9d" opacity="0.78" />
+          <path d="M160 77 L177 64 L165 91 Z" fill="#6cf0ff" opacity="0.78" />
+          <circle cx="72" cy="57" fill="#07111f" r="5" />
+          <circle cx="108" cy="57" fill="#07111f" r="5" />
+          <path d="M80 70 Q90 78 100 70" fill="none" stroke="#07111f" strokeWidth="4" />
+          <circle className="dual-signal-ship-light" cx="45" cy="79" fill="#ffd257" r="5" />
+          <circle className="dual-signal-ship-light" cx="90" cy="84" fill="#ffd257" r="6" />
+          <circle className="dual-signal-ship-light" cx="135" cy="79" fill="#ffd257" r="5" />
+          <path
+            className="dual-signal-engine-flame"
+            d="M68 93 C74 120 84 120 90 94 C96 120 107 120 113 93 Z"
+            fill="#ffd257"
+            opacity="0.85"
+          />
+        </svg>
+        <div className="dual-signal-scanline" />
       </div>
-      <div className="rounded-md border border-white/14 bg-space-950/82 px-3 py-1 text-lg font-black text-white">
+      <div className="dual-signal-code-badge rounded-md border border-white/14 bg-space-950/86 px-4 py-1 text-xl font-black text-white">
         {pair}
       </div>
 
@@ -556,6 +611,9 @@ function EnemyShip({ laserBurst, pair }: { laserBurst: LaserBurst | null; pair: 
         <>
           <div className="dual-signal-laser absolute left-1/2 top-20 h-44 w-3 -translate-x-1/2 rounded-full bg-plasma shadow-[0_0_28px_rgba(108,240,255,0.9)]" />
           <div className="dual-signal-explosion absolute left-1/2 top-2 h-28 w-28 -translate-x-1/2 rounded-full" />
+          <div className="dual-signal-debris dual-signal-debris-a" />
+          <div className="dual-signal-debris dual-signal-debris-b" />
+          <div className="dual-signal-debris dual-signal-debris-c" />
           <div className="absolute -top-4 left-1/2 -translate-x-1/2 rounded-md border border-comet/40 bg-comet/18 px-3 py-1 text-sm font-black uppercase text-comet">
             Direct hit
           </div>
