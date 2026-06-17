@@ -7,6 +7,7 @@ import {
   starJumperConfigForLevel,
   type StarJumperGate,
 } from '@/domain/starJumper';
+import { makeStarField } from '@/domain/starfield';
 import { distance, type Point } from '@/domain/orbit';
 import { useAcademyStore } from '@/state/useAcademyStore';
 import type { InputKind, MissionResult } from '@/domain/types';
@@ -283,15 +284,15 @@ export function StarJumper({ onComplete, onExit }: StarJumperProps) {
 
     const drawStars = (width: number, height: number, now: number) => {
       context.save();
-      for (let i = 0; i < 90; i += 1) {
-        const x = (i * 83 + Math.sin(now / 1100 + i) * 10) % width;
-        const y = (i * 47) % height;
-        context.globalAlpha = 0.28 + (i % 5) * 0.08;
-        context.fillStyle = i % 6 === 0 ? '#ffd166' : '#cdefff';
+      const stars = makeStarField(120, width, height, 7);
+      stars.forEach((star) => {
+        const twinkle = 0.78 + Math.sin(now / 900 + star.twinklePhase) * 0.22;
+        context.globalAlpha = star.alpha * twinkle;
+        context.fillStyle = star.color;
         context.beginPath();
-        context.arc(x, y, (i % 3) + 0.8, 0, Math.PI * 2);
+        context.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
         context.fill();
-      }
+      });
       context.restore();
     };
 
