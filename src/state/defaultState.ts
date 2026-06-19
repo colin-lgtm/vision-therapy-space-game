@@ -1,11 +1,16 @@
 import type { AcademyState, WorldId, WorldProgress } from '@/domain/types';
 
-const enabledWorlds: WorldId[] = ['orbit-tracker', 'star-jumper', 'focus-portal', 'dual-signal'];
+export const enabledWorlds: WorldId[] = [
+  'orbit-tracker',
+  'star-jumper',
+  'focus-portal',
+  'dual-signal',
+];
 
 function progress(worldId: WorldId): WorldProgress {
   return {
     worldId,
-    level: worldId === 'orbit-tracker' ? 1 : 0,
+    level: 1,
     stars: 0,
     bestScore: 0,
     plays: 0,
@@ -20,12 +25,12 @@ export function createDefaultState(): AcademyState {
       rank: 'Launch Recruit',
       totalStars: 0,
       streakDays: 0,
-      unlockedWorlds: ['orbit-tracker'],
+      unlockedWorlds: [...enabledWorlds],
       unlockedCosmetics: ['Starter Ship'],
     },
     missionPlan: {
       maxFuelSeconds: 15 * 60,
-      enabledWorlds,
+      enabledWorlds: [...enabledWorlds],
       difficultyCaps: {
         'orbit-tracker': 30,
         'star-jumper': 30,

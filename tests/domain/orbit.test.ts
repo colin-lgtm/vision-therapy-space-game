@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { distance, orbitConfigForLevel, orbitWobbleForLevel, targetPosition } from '@/domain/orbit';
+import {
+  distance,
+  orbitConfigForLevel,
+  orbitThreatConfigForLevel,
+  orbitWobbleForLevel,
+  targetPosition,
+} from '@/domain/orbit';
 
 describe('orbit math', () => {
   it('keeps level configuration within playable bounds', () => {
@@ -7,7 +13,7 @@ describe('orbit math', () => {
     const high = orbitConfigForLevel(30);
 
     expect(first.targetRadius).toBeGreaterThan(high.targetRadius);
-    expect(first.speed).toBeCloseTo(0.34);
+    expect(first.speed).toBeCloseTo(0.42);
     expect(high.targetRadius).toBeGreaterThanOrEqual(28);
     expect(high.durationSeconds).toBeLessThanOrEqual(120);
   });
@@ -51,6 +57,18 @@ describe('orbit math', () => {
     });
 
     expect(Math.round(distance(first, second))).toBeGreaterThan(20);
+  });
+
+  it('keeps Orbit Tracker busy with faster and denser threats over time', () => {
+    const levelOneStart = orbitThreatConfigForLevel(1, 0);
+    const levelOneLate = orbitThreatConfigForLevel(1, 60);
+    const advancedLate = orbitThreatConfigForLevel(8, 60);
+
+    expect(levelOneStart.spawnIntervalMs).toBeLessThanOrEqual(1080);
+    expect(levelOneLate.spawnIntervalMs).toBeLessThan(levelOneStart.spawnIntervalMs);
+    expect(levelOneLate.meteorSpeedMin).toBeGreaterThan(levelOneStart.meteorSpeedMin);
+    expect(advancedLate.maxThreats).toBeGreaterThan(levelOneLate.maxThreats);
+    expect(advancedLate.alienChance).toBeGreaterThan(levelOneLate.alienChance);
   });
 
   it('generates target positions inside padded canvas bounds', () => {

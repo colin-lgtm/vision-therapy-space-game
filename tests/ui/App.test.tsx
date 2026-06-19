@@ -34,10 +34,9 @@ describe('App', () => {
     expect(screen.getByLabelText('Orbit Tracker game surface')).toBeInTheDocument();
   });
 
-  it('starts Star Jumper after test unlock', async () => {
+  it('starts Star Jumper without requiring a parent unlock', async () => {
     render(<App />);
 
-    await userEvent.click(await screen.findByRole('button', { name: 'Unlock Cards' }));
     await userEvent.click(
       await screen.findByRole('button', { name: 'Launch Mission: Star Jumper' }),
     );
@@ -50,10 +49,9 @@ describe('App', () => {
     expect(screen.getByLabelText('Star Jumper game surface')).toBeInTheDocument();
   });
 
-  it('starts Focus Portal after test unlock', async () => {
+  it('starts Focus Portal without requiring a parent unlock', async () => {
     render(<App />);
 
-    await userEvent.click(await screen.findByRole('button', { name: 'Unlock Cards' }));
     await userEvent.click(
       await screen.findByRole('button', { name: 'Launch Mission: Focus Portal' }),
     );
@@ -66,10 +64,9 @@ describe('App', () => {
     expect(screen.getByLabelText('Focus Portal game surface')).toBeInTheDocument();
   });
 
-  it('starts Dual-Signal Decoder after test unlock', async () => {
+  it('starts Dual-Signal Decoder without requiring a parent unlock', async () => {
     render(<App />);
 
-    await userEvent.click(await screen.findByRole('button', { name: 'Unlock Cards' }));
     await userEvent.click(
       await screen.findByRole('button', { name: 'Launch Mission: Dual-Signal Decoder' }),
     );
@@ -82,11 +79,31 @@ describe('App', () => {
     expect(screen.getByLabelText('Dual-Signal Decoder game surface')).toBeInTheDocument();
   });
 
-  it('shows audio briefing and test unlock affordances on the star map', async () => {
+  it('shows audio briefing and level test affordances on the star map', async () => {
     render(<App />);
 
     expect(await screen.findByText('Audio Briefings')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Unlock Cards' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Reset Test Unlocks' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('combobox', { name: 'Select Orbit Tracker level' }),
+    ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Hear Orbit Tracker briefing' })).toBeInTheDocument();
+  });
+
+  it('launches the selected Orbit Tracker testing level', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.selectOptions(
+      await screen.findByRole('combobox', { name: 'Select Orbit Tracker level' }),
+      '6',
+    );
+    await user.click(screen.getByRole('button', { name: 'Launch Mission: Orbit Tracker' }));
+    await user.click(await screen.findByRole('button', { name: 'Start Mission: Orbit Tracker' }));
+
+    expect(await screen.findByLabelText('Orbit Tracker game surface')).toHaveAttribute(
+      'data-level',
+      '6',
+    );
   });
 });

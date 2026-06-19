@@ -5,6 +5,7 @@ import { calculateOrbitScore } from '@/domain/progression';
 import {
   distance,
   orbitConfigForLevel,
+  orbitThreatConfigForLevel,
   orbitWobbleForLevel,
   targetPosition,
   type Point,
@@ -314,9 +315,14 @@ export function OrbitTracker({ onComplete, onExit }: OrbitTrackerProps) {
       }
     };
 
-    const spawnThreat = (width: number, height: number, target: Point, now: number) => {
-      const kind: ThreatKind =
-        Math.random() < Math.min(0.36, 0.08 + level * 0.018) ? 'alien' : 'meteor';
+    const spawnThreat = (
+      width: number,
+      height: number,
+      target: Point,
+      now: number,
+      threatConfig: ReturnType<typeof orbitThreatConfigForLevel>,
+    ) => {
+      const kind: ThreatKind = Math.random() < threatConfig.alienChance ? 'alien' : 'meteor';
       const fromTop = Math.random() > 0.5;
       const x = kind === 'alien' ? width + 54 : fromTop ? Math.random() * width : width + 34;
       const y =
@@ -327,7 +333,10 @@ export function OrbitTracker({ onComplete, onExit }: OrbitTrackerProps) {
             : Math.random() * height;
       const angle = Math.atan2(target.y - y, target.x - x);
       const speed =
-        kind === 'alien' ? 0.42 + level * 0.01 : 0.75 + Math.random() * 0.55 + level * 0.018;
+        kind === 'alien'
+          ? threatConfig.alienSpeed
+          : threatConfig.meteorSpeedMin +
+            Math.random() * (threatConfig.meteorSpeedMax - threatConfig.meteorSpeedMin);
       threatsRef.current.push({
         id: threatIdRef.current,
         kind,
@@ -337,7 +346,7 @@ export function OrbitTracker({ onComplete, onExit }: OrbitTrackerProps) {
         vy: kind === 'alien' ? Math.sin(now / 900) * 0.35 : Math.sin(angle) * speed,
         radius: kind === 'alien' ? 22 : 13 + Math.random() * 11,
         spin: Math.random() * Math.PI,
-        nextFireAt: now + 900 + Math.random() * 1100,
+        nextFireAt: now + 640 + Math.random() * threatConfig.boltIntervalMs,
       });
       threatIdRef.current += 1;
     };
@@ -438,6 +447,7 @@ export function OrbitTracker({ onComplete, onExit }: OrbitTrackerProps) {
       const elapsedSeconds = ((now - startRef.current - pausedMsRef.current) / 1000) * config.speed;
       const activeSeconds = (now - startRef.current - pausedMsRef.current) / 1000;
       activeSecondsRef.current = activeSeconds;
+      const threatConfig = orbitThreatConfigForLevel(level, activeSeconds);
       const remaining = Math.max(0, config.durationSeconds - activeSeconds);
       setRemainingSeconds(remaining);
 
@@ -489,9 +499,20 @@ export function OrbitTracker({ onComplete, onExit }: OrbitTrackerProps) {
       );
       setShieldEnergy(shieldEnergyRef.current);
 
-      const spawnInterval = Math.max(760, 1650 - level * 36);
-      if (now - lastMeteorSpawnRef.current > spawnInterval) {
-        spawnThreat(width, height, target, now);
+      if (
+        now - lastMeteorSpawnRef.current > threatConfig.spawnIntervalMs &&
+        threatsRef.current.length < threatConfig.maxThreats
+      ) {
+        spawnThreat(width, height, target, now, threatConfig);
+        lastMeteorSpawnRef.current = now;
+      }
+
+      if (
+        activeSeconds > 8 &&
+        threatsRef.current.length < Math.max(3, Math.floor(threatConfig.maxThreats * 0.55)) &&
+        now - lastMeteorSpawnRef.current > threatConfig.spawnIntervalMs * 0.42
+      ) {
+        spawnThreat(width, height, target, now, threatConfig);
         lastMeteorSpawnRef.current = now;
       }
 
@@ -511,11 +532,11 @@ export function OrbitTracker({ onComplete, onExit }: OrbitTrackerProps) {
             boltsRef.current.push({
               x: nextThreat.x,
               y: nextThreat.y,
-              vx: Math.cos(angle) * 4.2,
-              vy: Math.sin(angle) * 4.2,
+              vx: Math.cos(angle) * threatConfig.boltSpeed,
+              vy: Math.sin(angle) * threatConfig.boltSpeed,
               life: 1,
             });
-            nextThreat.nextFireAt = now + Math.max(780, 1800 - level * 35);
+            nextThreat.nextFireAt = now + threatConfig.boltIntervalMs;
           }
           return nextThreat;
         })
@@ -745,6 +766,7 @@ export function OrbitTracker({ onComplete, onExit }: OrbitTrackerProps) {
           data-hud-box={`${ORBIT_TRACKER_HUD.x},${ORBIT_TRACKER_HUD.y},${ORBIT_TRACKER_HUD.width},${ORBIT_TRACKER_HUD.height}`}
           data-hud-copy={ORBIT_TRACKER_HUD.title}
           data-hud-padding={ORBIT_TRACKER_HUD.paddingX}
+          data-level={level}
           onPointerCancel={() => {
             pointerRef.current = null;
           }}

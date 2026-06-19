@@ -25,6 +25,7 @@ export function StarMap({ onLaunchWorld }: StarMapProps) {
   const profile = useAcademyStore((state) => state.profile);
   const progress = useAcademyStore((state) => state.progress);
   const unlockAllForTesting = useAcademyStore((state) => state.unlockAllForTesting);
+  const setWorldLevelForTesting = useAcademyStore((state) => state.setWorldLevelForTesting);
 
   async function unlockTesting() {
     playEffect('launch');
@@ -70,6 +71,7 @@ export function StarMap({ onLaunchWorld }: StarMapProps) {
                   isUnlocked={isUnlocked}
                   key={world.id}
                   onLaunch={() => onLaunchWorld(world.id)}
+                  onLevelSelect={(level) => void setWorldLevelForTesting(world.id, level)}
                   starsNeeded={starsNeeded}
                   totalStars={profile.totalStars}
                   world={world}
@@ -124,7 +126,7 @@ export function StarMap({ onLaunchWorld }: StarMapProps) {
               Test Lab
             </p>
             <p className="mt-2 text-sm leading-6 text-white/72">
-              Unlock every card for inspection. Finished worlds can launch.
+              All cards start open. Use each card&apos;s level selector to test harder stages.
             </p>
             <button
               className="mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-md border border-nebula/35 bg-nebula/18 px-3 py-2 font-black text-white hover:bg-nebula/26"
@@ -132,7 +134,7 @@ export function StarMap({ onLaunchWorld }: StarMapProps) {
               type="button"
             >
               <Rocket className="h-5 w-5" />
-              Unlock Cards
+              Reset Test Unlocks
             </button>
           </section>
         </aside>
@@ -150,6 +152,7 @@ interface MissionTileProps {
   totalStars: number;
   starsNeeded: number;
   onLaunch: () => void;
+  onLevelSelect: (level: number) => void;
 }
 
 function MissionTile({
@@ -161,6 +164,7 @@ function MissionTile({
   totalStars,
   starsNeeded,
   onLaunch,
+  onLevelSelect,
 }: MissionTileProps) {
   function hearBriefing() {
     speakBriefing(world.briefing);
@@ -220,8 +224,26 @@ function MissionTile({
         </div>
 
         <div className="relative">
-          <div className="mb-1 flex items-center justify-between text-sm font-black">
-            <span className="text-plasma">Level {worldLevel}</span>
+          <div className="mb-1 flex items-center justify-between gap-2 text-sm font-black">
+            <label className="flex min-w-0 items-center gap-2 text-plasma">
+              <span>Level</span>
+              {isUnlocked ? (
+                <select
+                  aria-label={`Select ${world.name} level`}
+                  className="h-8 rounded-md border border-plasma/35 bg-space-950/88 px-2 text-sm font-black text-white"
+                  onChange={(event) => onLevelSelect(Number(event.target.value))}
+                  value={worldLevel}
+                >
+                  {Array.from({ length: 30 }, (_, index) => index + 1).map((level) => (
+                    <option key={level} value={level}>
+                      {level}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <span>{worldLevel}</span>
+              )}
+            </label>
             <span className="flex items-center gap-1 text-comet">
               <Star className="h-4 w-4 fill-current" />
               {worldStars}

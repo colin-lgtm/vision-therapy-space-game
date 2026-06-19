@@ -31,6 +31,19 @@ export interface OrbitLevelConfig {
   durationSeconds: number;
 }
 
+export interface OrbitThreatConfig {
+  level: number;
+  activeSeconds: number;
+  spawnIntervalMs: number;
+  maxThreats: number;
+  meteorSpeedMin: number;
+  meteorSpeedMax: number;
+  alienSpeed: number;
+  alienChance: number;
+  boltSpeed: number;
+  boltIntervalMs: number;
+}
+
 export function orbitConfigForLevel(level: number): OrbitLevelConfig {
   const clamped = Math.max(1, Math.min(30, level));
   const paths: OrbitPath[] = [
@@ -45,9 +58,27 @@ export function orbitConfigForLevel(level: number): OrbitLevelConfig {
   return {
     level: clamped,
     targetRadius: Math.max(28, 56 - clamped * 0.8),
-    speed: Math.min(1.55, Number((0.34 * 1.15 ** (clamped - 1)).toFixed(3))),
+    speed: Math.min(1.85, Number((0.42 * 1.16 ** (clamped - 1)).toFixed(3))),
     path: paths[Math.floor((clamped - 1) / 2) % paths.length],
     durationSeconds: Math.min(120, 55 + clamped * 3),
+  };
+}
+
+export function orbitThreatConfigForLevel(level: number, activeSeconds = 0): OrbitThreatConfig {
+  const clamped = Math.max(1, Math.min(30, Math.floor(level)));
+  const runPressure = Math.min(1, Math.max(0, activeSeconds) / 60);
+
+  return {
+    level: clamped,
+    activeSeconds,
+    spawnIntervalMs: Math.max(420, Math.round(1080 - clamped * 18 - runPressure * 260)),
+    maxThreats: Math.min(18, 5 + Math.floor(clamped / 2) + Math.floor(runPressure * 5)),
+    meteorSpeedMin: Number((1.0 + clamped * 0.025 + runPressure * 0.28).toFixed(3)),
+    meteorSpeedMax: Number((1.72 + clamped * 0.04 + runPressure * 0.44).toFixed(3)),
+    alienSpeed: Number((0.64 + clamped * 0.02 + runPressure * 0.22).toFixed(3)),
+    alienChance: Number(Math.min(0.5, 0.12 + clamped * 0.018 + runPressure * 0.1).toFixed(3)),
+    boltSpeed: Number((4.8 + clamped * 0.055 + runPressure * 0.75).toFixed(3)),
+    boltIntervalMs: Math.max(540, Math.round(1420 - clamped * 32 - runPressure * 260)),
   };
 }
 

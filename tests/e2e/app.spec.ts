@@ -95,15 +95,15 @@ test('star map launches Orbit Tracker', async ({ page }) => {
   await expect(page.getByText('Keep the beam locked')).toBeVisible();
   const surface = page.getByLabel('Orbit Tracker game surface');
   await expect(surface).toBeVisible();
+  await expect(surface).toHaveAttribute('data-level', '1');
   await expect(surface).toHaveAttribute('data-hud-copy', 'LOCK + CLICK TO FIRE');
   await expect(surface).toHaveAttribute('data-hud-box', '18,18,250,64');
   await expect(surface).toHaveAttribute('data-hud-padding', '16');
   await expectCanvasHudCopyFits(page, 'Orbit Tracker game surface');
 });
 
-test('test lab unlocks and launches Star Jumper', async ({ page }) => {
+test('star map launches Star Jumper without parent unlock', async ({ page }) => {
   await page.goto('/');
-  await page.getByRole('button', { name: 'Unlock Cards' }).click();
   await launchMission(page, 'Star Jumper');
 
   await expect(page.getByText('Jump to the red gate')).toBeVisible();
@@ -117,9 +117,8 @@ test('test lab unlocks and launches Star Jumper', async ({ page }) => {
   await expectCanvasHudCopyFits(page, 'Star Jumper game surface');
 });
 
-test('test lab unlocks and launches Focus Portal', async ({ page }) => {
+test('star map launches Focus Portal without parent unlock', async ({ page }) => {
   await page.goto('/');
-  await page.getByRole('button', { name: 'Unlock Cards' }).click();
   await launchMission(page, 'Focus Portal');
 
   await expect(page.getByText('Stop the crash codes')).toBeVisible();
@@ -157,9 +156,8 @@ test('test lab unlocks and launches Focus Portal', async ({ page }) => {
   await expect(surface).toHaveAttribute('data-hull', '3');
 });
 
-test('test lab unlocks and launches Dual-Signal Decoder', async ({ page }) => {
+test('star map launches Dual-Signal Decoder without parent unlock', async ({ page }) => {
   await page.goto('/');
-  await page.getByRole('button', { name: 'Unlock Cards' }).click();
   await launchMission(page, 'Dual-Signal Decoder');
 
   await expect(page.getByText('Match both signals')).toBeVisible();
@@ -175,6 +173,14 @@ test('test lab unlocks and launches Dual-Signal Decoder', async ({ page }) => {
   await expect(page.getByText('Direct hit')).toBeVisible();
   await expect(surface).toHaveAttribute('data-decoded', '1');
   await expect(surface).toHaveAttribute('data-laser-state', 'idle');
+});
+
+test('star map level selector launches the chosen Orbit Tracker level', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('combobox', { name: 'Select Orbit Tracker level' }).selectOption('7');
+  await launchMission(page, 'Orbit Tracker');
+
+  await expect(page.getByLabel('Orbit Tracker game surface')).toHaveAttribute('data-level', '7');
 });
 
 test('dashboard is available for grown-up review', async ({ page }) => {
@@ -207,7 +213,6 @@ test('core screens keep clean visual boundaries', async ({ page }) => {
   await expectCleanViewport(page);
 
   await page.getByRole('button', { name: 'Star Map' }).click();
-  await page.getByRole('button', { name: 'Unlock Cards' }).click();
   await launchMission(page, 'Star Jumper');
   await expect(page.getByText('Jump to the red gate')).toBeVisible();
   await expectGameSurfaceHasRoom(page, 'Star Jumper game surface');
