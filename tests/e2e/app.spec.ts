@@ -177,7 +177,9 @@ test('star map launches Dual-Signal Decoder without parent unlock', async ({ pag
 
 test('star map level selector launches the chosen Orbit Tracker level', async ({ page }) => {
   await page.goto('/');
-  await page.getByRole('combobox', { name: 'Select Orbit Tracker level' }).selectOption('7');
+  for (let clickCount = 0; clickCount < 6; clickCount += 1) {
+    await page.getByRole('button', { name: 'Increase Orbit Tracker level' }).click();
+  }
   await launchMission(page, 'Orbit Tracker');
 
   await expect(page.getByLabel('Orbit Tracker game surface')).toHaveAttribute('data-level', '7');

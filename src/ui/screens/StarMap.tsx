@@ -2,7 +2,9 @@ import {
   Gamepad2,
   Headphones,
   Lock,
+  Minus,
   Play,
+  Plus,
   Rocket,
   Sparkles,
   Star,
@@ -225,25 +227,12 @@ function MissionTile({
 
         <div className="relative">
           <div className="mb-1 flex items-center justify-between gap-2 text-sm font-black">
-            <label className="flex min-w-0 items-center gap-2 text-plasma">
-              <span>Level</span>
-              {isUnlocked ? (
-                <select
-                  aria-label={`Select ${world.name} level`}
-                  className="h-8 rounded-md border border-plasma/35 bg-space-950/88 px-2 text-sm font-black text-white"
-                  onChange={(event) => onLevelSelect(Number(event.target.value))}
-                  value={worldLevel}
-                >
-                  {Array.from({ length: 30 }, (_, index) => index + 1).map((level) => (
-                    <option key={level} value={level}>
-                      {level}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <span>{worldLevel}</span>
-              )}
-            </label>
+            <LevelStepper
+              isUnlocked={isUnlocked}
+              onLevelSelect={onLevelSelect}
+              value={worldLevel}
+              worldName={world.name}
+            />
             <span className="flex items-center gap-1 text-comet">
               <Star className="h-4 w-4 fill-current" />
               {worldStars}
@@ -287,6 +276,72 @@ function MissionTile({
         </div>
       </div>
     </article>
+  );
+}
+
+function LevelStepper({
+  isUnlocked,
+  onLevelSelect,
+  value,
+  worldName,
+}: {
+  isUnlocked: boolean;
+  onLevelSelect: (level: number) => void;
+  value: number;
+  worldName: string;
+}) {
+  const safeValue = Math.max(1, Math.min(30, value));
+
+  function setLevel(level: number) {
+    onLevelSelect(Math.max(1, Math.min(30, Math.floor(level))));
+  }
+
+  if (!isUnlocked) {
+    return (
+      <div className="flex items-center gap-2 text-plasma">
+        <span>Level</span>
+        <span>{safeValue}</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-2 text-plasma">
+      <span>Level</span>
+      <div className="flex items-center overflow-hidden rounded-md border border-plasma/40 bg-space-950/92 shadow-[0_0_14px_rgba(108,240,255,0.12)]">
+        <button
+          aria-label={`Decrease ${worldName} level`}
+          className="flex h-9 w-9 items-center justify-center border-r border-plasma/25 bg-white/7 text-white hover:bg-plasma/18 disabled:opacity-35"
+          disabled={safeValue <= 1}
+          onClick={() => setLevel(safeValue - 1)}
+          type="button"
+        >
+          <Minus className="h-4 w-4" />
+        </button>
+        <input
+          aria-label={`Select ${worldName} level`}
+          className="h-9 w-12 border-0 bg-space-950 text-center text-base font-black text-white outline-none [appearance:textfield]"
+          inputMode="numeric"
+          max={30}
+          min={1}
+          onChange={(event) => {
+            const nextLevel = Number(event.target.value);
+            if (Number.isFinite(nextLevel)) setLevel(nextLevel);
+          }}
+          type="number"
+          value={safeValue}
+        />
+        <button
+          aria-label={`Increase ${worldName} level`}
+          className="flex h-9 w-9 items-center justify-center border-l border-plasma/25 bg-white/7 text-white hover:bg-plasma/18 disabled:opacity-35"
+          disabled={safeValue >= 30}
+          onClick={() => setLevel(safeValue + 1)}
+          type="button"
+        >
+          <Plus className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
   );
 }
 

@@ -85,7 +85,10 @@ describe('App', () => {
     expect(await screen.findByText('Audio Briefings')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Reset Test Unlocks' })).toBeInTheDocument();
     expect(
-      screen.getByRole('combobox', { name: 'Select Orbit Tracker level' }),
+      screen.getByRole('spinbutton', { name: 'Select Orbit Tracker level' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Increase Orbit Tracker level' }),
     ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Hear Orbit Tracker briefing' })).toBeInTheDocument();
   });
@@ -94,10 +97,10 @@ describe('App', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.selectOptions(
-      await screen.findByRole('combobox', { name: 'Select Orbit Tracker level' }),
-      '6',
-    );
+    const increase = await screen.findByRole('button', { name: 'Increase Orbit Tracker level' });
+    for (let clickCount = 0; clickCount < 5; clickCount += 1) {
+      await user.click(increase);
+    }
     await user.click(screen.getByRole('button', { name: 'Launch Mission: Orbit Tracker' }));
     await user.click(await screen.findByRole('button', { name: 'Start Mission: Orbit Tracker' }));
 
