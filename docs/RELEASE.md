@@ -40,6 +40,25 @@ The current Electron Builder configuration creates an NSIS installer:
 - User-level install by default.
 - Install directory can be changed.
 - Output name: `Nate-O-Vision-Space-Academy-${version}.exe`
+- Packaged installs check GitHub Releases for updates after launch.
+
+## GitHub Auto-Updates
+
+Auto-update uses the public GitHub Releases feed at `colin-lgtm/vision-therapy-space-game`. Do not embed private GitHub tokens in the app.
+
+For each release:
+
+1. Update `package.json` to the next version.
+2. Run `npm run verify`.
+3. Run `npm run test:e2e`.
+4. Run `npm run build:electron`.
+5. Create or update a GitHub Release tag matching the version, for example `v0.1.1`.
+6. Upload all update artifacts from `%LOCALAPPDATA%\NateOVisionBuild\release`:
+   - `Nate-O-Vision-Space-Academy-${version}.exe`
+   - `Nate-O-Vision-Space-Academy-${version}.exe.blockmap`
+   - `latest.yml`
+
+Existing installed apps will check that release feed, download newer versions, and prompt for restart once the update is ready.
 
 ## Distribution At Scale
 

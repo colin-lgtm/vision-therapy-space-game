@@ -1,5 +1,6 @@
 const path = require('node:path');
-const { app, BrowserWindow, ipcMain, shell } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain, shell } = require('electron');
+const { autoUpdater } = require('electron-updater');
 
 let mainWindow = null;
 let store = null;
@@ -44,6 +45,39 @@ function createWindow() {
   }
 }
 
+function setupAutoUpdates() {
+  if (!app.isPackaged) return;
+
+  autoUpdater.autoDownload = true;
+  autoUpdater.autoInstallOnAppQuit = true;
+
+  autoUpdater.on('update-downloaded', async () => {
+    const response = await dialog.showMessageBox(mainWindow, {
+      type: 'info',
+      buttons: ['Restart now', 'Later'],
+      defaultId: 0,
+      cancelId: 1,
+      title: 'Update ready',
+      message: 'A new Nate-O-Vision update is ready.',
+      detail: 'Restart the app now to install the update.',
+    });
+
+    if (response.response === 0) {
+      autoUpdater.quitAndInstall(false, true);
+    }
+  });
+
+  autoUpdater.on('error', (error) => {
+    console.warn('Auto-update check failed:', error);
+  });
+
+  window.setTimeout(() => {
+    autoUpdater.checkForUpdates().catch((error) => {
+      console.warn('Auto-update check failed:', error);
+    });
+  }, 4000);
+}
+
 app.whenReady().then(async () => {
   await loadStore();
 
@@ -58,6 +92,7 @@ app.whenReady().then(async () => {
   });
 
   createWindow();
+  setupAutoUpdates();
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {

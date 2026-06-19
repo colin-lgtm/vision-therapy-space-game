@@ -7,6 +7,10 @@ files:
   - dist/**
   - dist-electron/**
   - package.json
+publish:
+  provider: github
+  owner: colin-lgtm
+  repo: vision-therapy-space-game
 win:
   icon: build/icon.ico
   target:
