@@ -11,5 +11,8 @@ describe('auto-update packaging config', () => {
     expect(builderConfig).toContain('owner: colin-lgtm');
     expect(builderConfig).toContain('repo: vision-therapy-space-game');
     expect(mainProcess).toContain('autoUpdater.checkForUpdates()');
+    expect(mainProcess).toContain("ipcMain.handle('updater:check'");
+    expect(mainProcess).toContain('setTimeout(() =>');
+    expect(mainProcess).not.toContain('window.setTimeout');
   });
 });

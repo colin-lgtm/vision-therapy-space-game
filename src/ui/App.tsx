@@ -1,5 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Activity, BarChart3, Rocket, Settings } from 'lucide-react';
+import {
+  Activity,
+  BarChart3,
+  CheckCircle2,
+  Download,
+  RefreshCw,
+  Rocket,
+  Settings,
+} from 'lucide-react';
 import { DualSignalDecoder } from './games/DualSignalDecoder';
 import { FocusPortal } from './games/FocusPortal';
 import { OrbitTracker } from './games/OrbitTracker';
@@ -9,6 +17,7 @@ import { MissionIntro } from './screens/MissionIntro';
 import { MissionSummary } from './screens/MissionSummary';
 import { StarMap } from './screens/StarMap';
 import { useAcademyStore } from '@/state/useAcademyStore';
+import type { UpdateStatus } from '@/vite-env';
 import type { MissionResult, WorldId } from '@/domain/types';
 
 type Screen =
@@ -23,10 +32,28 @@ export function App() {
   const hasHydrated = useAcademyStore((state) => state.hasHydrated);
   const recordMissionResult = useAcademyStore((state) => state.recordMissionResult);
   const [screen, setScreen] = useState<Screen>({ name: 'map' });
+  const [updateStatus, setUpdateStatus] = useState<UpdateStatus>({
+    state: 'idle',
+    message: 'Updates ready',
+  });
 
   useEffect(() => {
     void hydrate();
   }, [hydrate]);
+
+  useEffect(() => {
+    const updates = window.nateAcademy?.updates;
+    if (!updates) {
+      setUpdateStatus({
+        state: 'unavailable',
+        message: 'Desktop updates',
+      });
+      return undefined;
+    }
+
+    void updates.info().then(setUpdateStatus);
+    return updates.onStatus(setUpdateStatus);
+  }, []);
 
   const nav = useMemo(
     () => [
@@ -39,6 +66,24 @@ export function App() {
   async function completeMission(result: MissionResult) {
     await recordMissionResult(result);
     setScreen({ name: 'summary', result });
+  }
+
+  async function checkUpdates() {
+    const updates = window.nateAcademy?.updates;
+    if (!updates) {
+      setUpdateStatus({
+        state: 'unavailable',
+        message: 'Updates work in the installed app.',
+      });
+      return;
+    }
+
+    const status = await updates.check();
+    setUpdateStatus(status);
+  }
+
+  async function installUpdate() {
+    await window.nateAcademy?.updates?.install();
   }
 
   if (!hasHydrated) {
@@ -68,6 +113,11 @@ export function App() {
         </button>
 
         <nav className="flex items-center gap-2">
+          <UpdateControl
+            onCheck={() => void checkUpdates()}
+            onInstall={() => void installUpdate()}
+            status={updateStatus}
+          />
           {nav.map((item) => {
             const Icon = item.icon;
             return (
@@ -125,5 +175,43 @@ export function App() {
         {screen.name === 'dashboard' && <GrownupDashboard />}
       </section>
     </main>
+  );
+}
+
+function UpdateControl({
+  onCheck,
+  onInstall,
+  status,
+}: {
+  onCheck: () => void;
+  onInstall: () => void;
+  status: UpdateStatus;
+}) {
+  const isBusy = status.state === 'checking' || status.state === 'downloading';
+  const isReady = status.state === 'ready';
+  const Icon = isReady ? Download : status.state === 'current' ? CheckCircle2 : RefreshCw;
+  const label = isReady ? 'Restart Update' : isBusy ? status.message : 'Check Updates';
+  const title = status.version
+    ? `${status.message} Current version ${status.version}.`
+    : status.message;
+
+  return (
+    <div className="flex items-center gap-2 rounded-md border border-plasma/20 bg-white/5 px-2 py-1">
+      <button
+        aria-label={label}
+        className="flex min-h-10 items-center gap-2 rounded-md px-3 py-2 text-sm font-black text-white transition hover:bg-white/12 disabled:cursor-wait disabled:opacity-70"
+        disabled={isBusy}
+        onClick={isReady ? onInstall : onCheck}
+        title={title}
+        type="button"
+      >
+        <Icon className={isBusy ? 'h-4 w-4 animate-spin' : 'h-4 w-4'} />
+        {label}
+      </button>
+      <div className="hidden min-w-[84px] text-right text-[10px] font-black uppercase leading-4 text-white/62 xl:block">
+        <div className="text-plasma">v{status.version ?? 'dev'}</div>
+        <div>{status.state === 'idle' ? 'Updates' : status.state}</div>
+      </div>
+    </div>
   );
 }

@@ -12,11 +12,24 @@ describe('App', () => {
     render(<App />);
 
     expect(await screen.findByText("Choose today's mission")).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Check Updates' })).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: /Dashboard/i }));
 
     await waitFor(() => {
       expect(screen.getByText('Progress and exports')).toBeInTheDocument();
     });
+  });
+
+  it('reports that updates require the desktop app in browser mode', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(await screen.findByRole('button', { name: 'Check Updates' }));
+
+    expect(await screen.findByRole('button', { name: 'Check Updates' })).toHaveAttribute(
+      'title',
+      'Updates work in the installed app.',
+    );
   });
 
   it('starts the orbit tracker mission', async () => {
