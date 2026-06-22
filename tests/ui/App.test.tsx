@@ -128,7 +128,10 @@ describe('App', () => {
     render(<App />);
 
     expect(await screen.findByText('Audio Briefings')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Reset Test Unlocks' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Open Games' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Lock Games' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Level 1' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Level 30' })).toBeInTheDocument();
     expect(
       screen.getByRole('spinbutton', { name: 'Select Orbit Tracker level' }),
     ).toBeInTheDocument();
@@ -136,6 +139,35 @@ describe('App', () => {
       screen.getByRole('button', { name: 'Increase Orbit Tracker level' }),
     ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Hear Orbit Tracker briefing' })).toBeInTheDocument();
+  });
+
+  it('can relock and reopen mission cards for testing', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    expect(
+      await screen.findByRole('button', { name: 'Launch Mission: Star Jumper' }),
+    ).toBeEnabled();
+
+    await user.click(screen.getByRole('button', { name: 'Lock Games' }));
+    expect(screen.getByRole('button', { name: 'Launch Mission: Star Jumper' })).toBeDisabled();
+    expect(screen.getByText('Earn 6 more')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Open Games' }));
+    expect(screen.getByRole('button', { name: 'Launch Mission: Star Jumper' })).toBeEnabled();
+  });
+
+  it('can reset and max all mission levels for testing', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(await screen.findByRole('button', { name: 'Level 30' }));
+    expect(screen.getByRole('spinbutton', { name: 'Select Orbit Tracker level' })).toHaveValue(30);
+    expect(screen.getByRole('spinbutton', { name: 'Select Star Jumper level' })).toHaveValue(30);
+
+    await user.click(screen.getByRole('button', { name: 'Level 1' }));
+    expect(screen.getByRole('spinbutton', { name: 'Select Orbit Tracker level' })).toHaveValue(1);
+    expect(screen.getByRole('spinbutton', { name: 'Select Star Jumper level' })).toHaveValue(1);
   });
 
   it('launches the selected Orbit Tracker testing level', async () => {

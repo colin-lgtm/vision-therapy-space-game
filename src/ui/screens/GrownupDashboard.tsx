@@ -1,4 +1,13 @@
-import { Download, FileSpreadsheet, RotateCcw, Star, TestTube2 } from 'lucide-react';
+import {
+  Download,
+  FileSpreadsheet,
+  Lock,
+  Minus,
+  Plus,
+  RotateCcw,
+  Star,
+  TestTube2,
+} from 'lucide-react';
 import { playEffect } from '@/domain/audio';
 import { clearPersistedState } from '@/domain/storage';
 import { worlds } from '@/domain/worlds';
@@ -20,6 +29,9 @@ export function GrownupDashboard() {
   const missionRuns = useAcademyStore((state) => state.missionRuns);
   const sessions = useAcademyStore((state) => state.sessions);
   const unlockAllForTesting = useAcademyStore((state) => state.unlockAllForTesting);
+  const lockGamesForTesting = useAcademyStore((state) => state.lockGamesForTesting);
+  const maxLevelsForTesting = useAcademyStore((state) => state.maxLevelsForTesting);
+  const resetLevelsForTesting = useAcademyStore((state) => state.resetLevelsForTesting);
 
   function exportJson() {
     downloadText(
@@ -84,6 +96,21 @@ export function GrownupDashboard() {
   async function unlockAll() {
     playEffect('launch');
     await unlockAllForTesting();
+  }
+
+  async function lockGames() {
+    playEffect('warning');
+    await lockGamesForTesting();
+  }
+
+  async function resetLevels() {
+    playEffect('lock');
+    await resetLevelsForTesting();
+  }
+
+  async function maxLevels() {
+    playEffect('launch');
+    await maxLevelsForTesting();
   }
 
   return (
@@ -217,14 +244,72 @@ export function GrownupDashboard() {
           </p>
         </div>
 
-        <button
-          className="mt-6 flex min-h-12 w-full items-center justify-center gap-2 rounded-md border border-comet/45 bg-comet/14 px-4 py-2 font-black text-comet hover:bg-comet/20"
-          onClick={unlockAll}
-          type="button"
-        >
-          <TestTube2 className="h-5 w-5" />
-          Unlock Cards For Testing
-        </button>
+        <div className="mt-6 rounded-lg border border-white/10 bg-white/7 p-4">
+          <div className="text-sm font-bold uppercase text-white/55">Scoring Guide</div>
+          <p className="mt-2 text-xs leading-5 text-white/62">
+            Every mission scores 0-1000. Stars use the same bands everywhere: 420 for one, 650 for
+            two, and 850 for three.
+          </p>
+          <ul className="mt-3 space-y-2 text-xs leading-5 text-white/64">
+            <li>
+              <strong className="text-plasma">Orbit:</strong> beam lock and staying close to the
+              target.
+            </li>
+            <li>
+              <strong className="text-comet">Star Jumper:</strong> correct jumps, speed, combo, and
+              avoiding decoys.
+            </li>
+            <li>
+              <strong className="text-success">Focus Portal:</strong> correct code stops, quick
+              reads, and avoiding crashes.
+            </li>
+            <li>
+              <strong className="text-nebula">Dual-Signal:</strong> correct matches, speed, combo,
+              and remaining shield.
+            </li>
+          </ul>
+        </div>
+
+        <div className="mt-6 rounded-lg border border-white/10 bg-white/7 p-4">
+          <div className="flex items-center gap-2 text-sm font-black uppercase text-nebula">
+            <TestTube2 className="h-4 w-4" />
+            Test Controls
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <button
+              className="flex min-h-11 items-center justify-center gap-2 rounded-md border border-nebula/45 bg-nebula/14 px-3 py-2 text-sm font-black text-white hover:bg-nebula/22"
+              onClick={unlockAll}
+              type="button"
+            >
+              <TestTube2 className="h-4 w-4" />
+              Open Games
+            </button>
+            <button
+              className="flex min-h-11 items-center justify-center gap-2 rounded-md border border-comet/45 bg-comet/14 px-3 py-2 text-sm font-black text-comet hover:bg-comet/20"
+              onClick={lockGames}
+              type="button"
+            >
+              <Lock className="h-4 w-4" />
+              Lock Games
+            </button>
+            <button
+              className="flex min-h-11 items-center justify-center gap-2 rounded-md border border-white/12 bg-white/8 px-3 py-2 text-sm font-black text-white hover:bg-white/12"
+              onClick={resetLevels}
+              type="button"
+            >
+              <Minus className="h-4 w-4" />
+              Level 1
+            </button>
+            <button
+              className="flex min-h-11 items-center justify-center gap-2 rounded-md border border-plasma/35 bg-plasma/14 px-3 py-2 text-sm font-black text-plasma hover:bg-plasma/20"
+              onClick={maxLevels}
+              type="button"
+            >
+              <Plus className="h-4 w-4" />
+              Level 30
+            </button>
+          </div>
+        </div>
 
         <button
           className="mt-6 flex min-h-12 w-full items-center justify-center gap-2 rounded-md border border-nebula/45 bg-nebula/12 px-4 py-2 font-black text-nebula hover:bg-nebula/18"

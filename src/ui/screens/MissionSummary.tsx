@@ -81,6 +81,10 @@ export function MissionSummary({ result, onContinue }: MissionSummaryProps) {
             ))}
           </div>
 
+          <p className="mx-auto mt-4 max-w-2xl text-sm font-bold leading-6 text-white/65">
+            {scoreHelpLine(result.worldId)}
+          </p>
+
           <button
             className="mx-auto mt-8 flex min-h-14 items-center gap-2 rounded-md bg-plasma px-8 py-4 text-xl font-black text-space-950 shadow-glow transition hover:scale-[1.01]"
             onClick={onContinue}
@@ -93,6 +97,20 @@ export function MissionSummary({ result, onContinue }: MissionSummaryProps) {
       </section>
     </div>
   );
+}
+
+function scoreHelpLine(worldId: MissionResult['worldId']): string {
+  const prefix = 'Stars: 420+ earns 1, 650+ earns 2, 850+ earns 3.';
+  if (worldId === 'star-jumper') {
+    return `${prefix} Star Jumper rewards accurate jumps, fast reactions, longer combos, and avoiding decoys.`;
+  }
+  if (worldId === 'focus-portal') {
+    return `${prefix} Focus Portal rewards correct codes, early reads, completed stops, and avoiding crashes.`;
+  }
+  if (worldId === 'dual-signal') {
+    return `${prefix} Dual-Signal rewards correct matches, fast decoding, combos, and shield left over.`;
+  }
+  return `${prefix} Orbit Tracker rewards beam lock, staying close to the orbit, and finishing the run.`;
 }
 
 function coachLine(result: MissionResult, stars: number): string {

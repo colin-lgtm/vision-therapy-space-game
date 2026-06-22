@@ -27,11 +27,29 @@ export function StarMap({ onLaunchWorld }: StarMapProps) {
   const profile = useAcademyStore((state) => state.profile);
   const progress = useAcademyStore((state) => state.progress);
   const unlockAllForTesting = useAcademyStore((state) => state.unlockAllForTesting);
+  const lockGamesForTesting = useAcademyStore((state) => state.lockGamesForTesting);
+  const maxLevelsForTesting = useAcademyStore((state) => state.maxLevelsForTesting);
+  const resetLevelsForTesting = useAcademyStore((state) => state.resetLevelsForTesting);
   const setWorldLevelForTesting = useAcademyStore((state) => state.setWorldLevelForTesting);
 
   async function unlockTesting() {
     playEffect('launch');
     await unlockAllForTesting();
+  }
+
+  async function lockTesting() {
+    playEffect('warning');
+    await lockGamesForTesting();
+  }
+
+  async function resetLevels() {
+    playEffect('lock');
+    await resetLevelsForTesting();
+  }
+
+  async function maxLevels() {
+    playEffect('launch');
+    await maxLevelsForTesting();
   }
 
   return (
@@ -128,16 +146,42 @@ export function StarMap({ onLaunchWorld }: StarMapProps) {
               Test Lab
             </p>
             <p className="mt-2 text-sm leading-6 text-white/72">
-              All cards start open. Use each card&apos;s level selector to test harder stages.
+              Open or relock mission cards, then set every level low or high for QA.
             </p>
-            <button
-              className="mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-md border border-nebula/35 bg-nebula/18 px-3 py-2 font-black text-white hover:bg-nebula/26"
-              onClick={unlockTesting}
-              type="button"
-            >
-              <Rocket className="h-5 w-5" />
-              Reset Test Unlocks
-            </button>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <button
+                className="flex min-h-11 items-center justify-center gap-2 rounded-md border border-nebula/35 bg-nebula/18 px-3 py-2 text-sm font-black text-white hover:bg-nebula/26"
+                onClick={unlockTesting}
+                type="button"
+              >
+                <Rocket className="h-4 w-4" />
+                Open Games
+              </button>
+              <button
+                className="flex min-h-11 items-center justify-center gap-2 rounded-md border border-comet/35 bg-comet/14 px-3 py-2 text-sm font-black text-comet hover:bg-comet/20"
+                onClick={lockTesting}
+                type="button"
+              >
+                <Lock className="h-4 w-4" />
+                Lock Games
+              </button>
+              <button
+                className="flex min-h-11 items-center justify-center gap-2 rounded-md border border-white/12 bg-white/8 px-3 py-2 text-sm font-black text-white hover:bg-white/12"
+                onClick={resetLevels}
+                type="button"
+              >
+                <Minus className="h-4 w-4" />
+                Level 1
+              </button>
+              <button
+                className="flex min-h-11 items-center justify-center gap-2 rounded-md border border-plasma/35 bg-plasma/14 px-3 py-2 text-sm font-black text-plasma hover:bg-plasma/20"
+                onClick={maxLevels}
+                type="button"
+              >
+                <Plus className="h-4 w-4" />
+                Level 30
+              </button>
+            </div>
           </section>
         </aside>
       </div>

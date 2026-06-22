@@ -23,6 +23,8 @@ describe('MissionSummary', () => {
 
     expect(screen.getByText('Jump Accuracy')).toBeInTheDocument();
     expect(screen.getByText('Best Combo')).toBeInTheDocument();
+    expect(screen.getByText(/420\+ earns 1/)).toBeInTheDocument();
+    expect(screen.getByText(/accurate jumps/)).toBeInTheDocument();
     expect(screen.queryByText('Beam Lock')).not.toBeInTheDocument();
     expect(screen.queryByText('undefined%')).not.toBeInTheDocument();
   });

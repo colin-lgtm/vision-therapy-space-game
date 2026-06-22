@@ -24,6 +24,9 @@ interface AcademyStore extends AcademyState {
   recordMissionResult: (result: MissionResult) => Promise<void>;
   logEvent: (event: Omit<AcademyEvent, 'id' | 'at'>) => Promise<void>;
   unlockAllForTesting: () => Promise<void>;
+  lockGamesForTesting: () => Promise<void>;
+  resetLevelsForTesting: () => Promise<void>;
+  maxLevelsForTesting: () => Promise<void>;
   setWorldLevelForTesting: (worldId: WorldId, level: number) => Promise<void>;
 }
 
@@ -65,7 +68,7 @@ function applyMissionResult(state: AcademyState, result: MissionResult): Academy
     metrics: result.metrics,
   };
 
-  const unlockedWorlds = [...enabledWorlds];
+  const unlockedWorlds = [...state.profile.unlockedWorlds];
 
   return {
     ...state,
@@ -205,6 +208,78 @@ export const useAcademyStore = create<AcademyStore>((set, get) => ({
           at: todayIso(),
           type: 'testing.unlockAll',
           payload: { totalStars: 30 },
+        },
+        ...get().events,
+      ].slice(0, 5000),
+    };
+    set(nextState);
+    await savePersistedState(nextState);
+  },
+  lockGamesForTesting: async () => {
+    const nextState: AcademyState = {
+      ...toPersistableState(get()),
+      profile: {
+        ...get().profile,
+        unlockedWorlds: ['orbit-tracker'],
+      },
+      events: [
+        {
+          id: nanoid(),
+          at: todayIso(),
+          type: 'testing.lockGames',
+          payload: { unlockedWorlds: 1 },
+        },
+        ...get().events,
+      ].slice(0, 5000),
+    };
+    set(nextState);
+    await savePersistedState(nextState);
+  },
+  resetLevelsForTesting: async () => {
+    const nextState: AcademyState = {
+      ...toPersistableState(get()),
+      progress: enabledWorlds.reduce<AcademyState['progress']>(
+        (progress, worldId) => ({
+          ...progress,
+          [worldId]: {
+            ...get().progress[worldId],
+            level: 1,
+          },
+        }),
+        get().progress,
+      ),
+      events: [
+        {
+          id: nanoid(),
+          at: todayIso(),
+          type: 'testing.resetLevels',
+          payload: { level: 1 },
+        },
+        ...get().events,
+      ].slice(0, 5000),
+    };
+    set(nextState);
+    await savePersistedState(nextState);
+  },
+  maxLevelsForTesting: async () => {
+    const nextState: AcademyState = {
+      ...toPersistableState(get()),
+      progress: enabledWorlds.reduce<AcademyState['progress']>(
+        (progress, worldId) => ({
+          ...progress,
+          [worldId]: {
+            ...get().progress[worldId],
+            level: 30,
+          },
+        }),
+        get().progress,
+      ),
+      events: [
+        {
+          id: nanoid(),
+          at: todayIso(),
+          type: 'testing.maxLevels',
+          payload: { level: 30 },
         },
         ...get().events,
       ].slice(0, 5000),
