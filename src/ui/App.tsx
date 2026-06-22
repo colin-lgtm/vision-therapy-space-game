@@ -63,8 +63,10 @@ export function App() {
     [],
   );
 
-  async function completeMission(result: MissionResult) {
-    await recordMissionResult(result);
+  function completeMission(result: MissionResult) {
+    void recordMissionResult(result).catch((error) => {
+      console.warn('Mission result could not be saved:', error);
+    });
     setScreen({ name: 'summary', result });
   }
 

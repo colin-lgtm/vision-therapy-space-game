@@ -5,6 +5,7 @@ import { App } from '@/ui/App';
 
 describe('App', () => {
   beforeEach(() => {
+    delete window.nateAcademy;
     window.localStorage.clear();
   });
 
@@ -45,6 +46,37 @@ describe('App', () => {
 
     expect(await screen.findByText('Keep the beam locked')).toBeInTheDocument();
     expect(screen.getByLabelText('Orbit Tracker game surface')).toBeInTheDocument();
+  });
+
+  it('shows the mission summary when ending a mission', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(await screen.findByRole('button', { name: 'Launch Mission: Orbit Tracker' }));
+    await user.click(await screen.findByRole('button', { name: 'Start Mission: Orbit Tracker' }));
+    await user.click(await screen.findByRole('button', { name: 'End' }));
+
+    expect(await screen.findByText('Mission Complete')).toBeInTheDocument();
+    expect(screen.getByText('Mission Logged')).toBeInTheDocument();
+  });
+
+  it('shows the mission summary even if progress saving fails', async () => {
+    window.nateAcademy = {
+      load: async () => null,
+      save: async () => {
+        throw new Error('save failed');
+      },
+      clear: async () => true,
+    };
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(await screen.findByRole('button', { name: 'Launch Mission: Orbit Tracker' }));
+    await user.click(await screen.findByRole('button', { name: 'Start Mission: Orbit Tracker' }));
+    await user.click(await screen.findByRole('button', { name: 'End' }));
+
+    expect(await screen.findByText('Mission Complete')).toBeInTheDocument();
+    expect(screen.getByText('Mission Logged')).toBeInTheDocument();
   });
 
   it('starts Star Jumper without requiring a parent unlock', async () => {

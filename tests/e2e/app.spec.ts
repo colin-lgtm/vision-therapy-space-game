@@ -102,6 +102,17 @@ test('star map launches Orbit Tracker', async ({ page }) => {
   await expectCanvasHudCopyFits(page, 'Orbit Tracker game surface');
 });
 
+test('ending Orbit Tracker shows the mission summary', async ({ page }) => {
+  await page.goto('/');
+  await launchMission(page, 'Orbit Tracker');
+
+  await page.getByRole('button', { name: 'End' }).click();
+
+  await expect(page.getByText('Mission Complete')).toBeVisible();
+  await expect(page.getByText('Mission Logged')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Back to Star Map' })).toBeVisible();
+});
+
 test('star map launches Star Jumper without parent unlock', async ({ page }) => {
   await page.goto('/');
   await launchMission(page, 'Star Jumper');
